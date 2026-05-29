@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-black text-white;
+  }
+}
+
+@layer utilities {
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .apple-blur {
+    @apply bg-black/80 backdrop-blur-xl;
+  }
+  
+  .apple-card {
+    @apply bg-[#1a1a1a] hover:bg-[#2a2a2a] transition-colors;
+  }
+  
+  .tidal-accent {
+    color: #00a8e8;
+  }
+  
+  .tidal-accent-bg {
+    background-color: #00a8e8;
+  }
+}
