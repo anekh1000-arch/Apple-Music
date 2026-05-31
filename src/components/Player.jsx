@@ -1,20 +1,13 @@
-import { useEffect, useRef, useState } from 'react'
-import { Play, Pause, SkipBack, SkipForward, Volume2, Maximize2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Play, Pause, SkipBack, SkipForward, Volume2, AlertCircle } from 'lucide-react'
+import { hapticMedium } from '../lib/haptics'
 
-function Player({ currentSong, isPlaying, progress, setProgress, onPlay, onPause, onNext, onPrevious }) {
-  const audioRef = useRef(null)
+function Player({ currentSong, isPlaying, progress, setProgress, onPlay, onPause, onNext, onPrevious, onOpenFullscreen, currentTheme, audioRef, currentTime, duration, onSeek, onTimeUpdate, isLightMode, dominantColor }) {
   const [volume, setVolume] = useState(1)
   const [isMuted, setIsMuted] = useState(false)
-
-  useEffect(() => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.play()
-      } else {
-        audioRef.current.pause()
-      }
-    }
-  }, [isPlaying, currentSong])
+  const [isLoading, setIsLoading] = useState(false)
+  const [audioError, setAudioError] = useState(null)
+  const [imageError, setImageError] = useState(false)
 
   useEffect(() => {
     if (audioRef.current) {
@@ -22,19 +15,39 @@ function Player({ currentSong, isPlaying, progress, setProgress, onPlay, onPause
     }
   }, [volume, isMuted])
 
-  const handleTimeUpdate = () => {
-    if (audioRef.current) {
-      const progressPercent = (audioRef.current.currentTime / audioRef.current.duration) * 100
-      setProgress(progressPercent)
+  // Reset error and loading state when song changes
+  useEffect(() => {
+    if (currentSong) {
+      setAudioError(null)
+      setIsLoading(true)
+      setImageError(false)
     }
+  }, [currentSong])
+
+  const [isTransitioning, setIsTransitioning] = useState(false)
+
+  useEffect(() => {
+    if (currentSong) {
+      setIsTransitioning(true)
+      const timer = setTimeout(() => setIsTransitioning(false), 300)
+      return () => clearTimeout(timer)
+    }
+  }, [currentSong])
+
+  const handleLoadStart = () => {
+    setIsLoading(true)
+    setAudioError(null)
   }
 
-  const handleSeek = (e) => {
-    if (audioRef.current) {
-      const seekTime = (e.target.value / 100) * audioRef.current.duration
-      audioRef.current.currentTime = seekTime
-      setProgress(e.target.value)
-    }
+  const handleCanPlay = () => {
+    setIsLoading(false)
+    setAudioError(null)
+  }
+
+  const handleError = (e) => {
+    console.error('Audio loading error:', currentSong?.audioUrl)
+    setAudioError('Failed to load audio')
+    setIsLoading(false)
   }
 
   const handleVolumeChange = (e) => {
@@ -55,89 +68,132 @@ function Player({ currentSong, isPlaying, progress, setProgress, onPlay, onPause
 
   if (!currentSong) return null
 
+  // Calculate subtle accent color for mini player
+  const getAccentColor = () => {
+    if (isLightMode) {
+      return `${dominantColor}20` // 12.5% opacity for light mode
+    } else {
+      return `${dominantColor}30` // 19% opacity for dark mode
+    }
+  }
+
   return (
     <>
-      <audio
-        ref={audioRef}
-        src={currentSong.audioUrl}
-        onTimeUpdate={handleTimeUpdate}
-        onEnded={onNext}
-      />
-      <div className="fixed bottom-0 left-0 right-0 apple-blur border-t border-[#1a1a1a] px-4 py-2">
-        <div className="max-w-screen-2xl mx-auto flex items-center justify-between gap-4">
-          {/* Song Info */}
-          <div className="flex items-center gap-2 w-56">
-            <img
-              src={currentSong.cover}
-              alt={currentSong.title}
-              className="w-8 h-8 rounded object-cover"
-            />
-            <div className="min-w-0">
-              <p className="text-sm font-medium truncate">{currentSong.title}</p>
-              <p className="text-xs text-[#8e8e93] truncate">{currentSong.artist}</p>
-            </div>
-          </div>
-
-          {/* Player Controls */}
-          <div className="flex-1 max-w-xl">
-            <div className="flex items-center justify-center gap-4">
-              <button
-                onClick={onPrevious}
-                className="text-[#8e8e93] hover:text-white transition-colors"
-              >
-                <SkipBack size={16} />
-              </button>
-              <button
-                onClick={isPlaying ? onPause : () => onPlay(currentSong)}
-                className="w-9 h-9 tidal-accent-bg rounded-full flex items-center justify-center hover:scale-105 transition-transform shadow-lg shadow-[#00a8e8]/20"
-              >
-                {isPlaying ? (
-                  <Pause size={16} className="text-white" />
-                ) : (
-                  <Play size={16} className="text-white ml-0.5" />
-                )}
-              </button>
-              <button
-                onClick={onNext}
-                className="text-[#8e8e93] hover:text-white transition-colors"
-              >
-                <SkipForward size={16} />
-              </button>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-[#8e8e93] w-10 text-right">
-                {audioRef.current ? formatTime(audioRef.current.currentTime) : '0:00'}
-              </span>
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={progress}
-                onChange={handleSeek}
-                className="flex-1 h-1 bg-[#2a2a2a] rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-2 [&::-webkit-slider-thumb]:h-2 [&::-webkit-slider-thumb]:bg-[#00a8e8] [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:hover:scale-125 [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:shadow-[#00a8e8]/30"
+      <style>{`
+        input[type="range"]::-webkit-slider-thumb {
+          background-color: ${isLightMode ? '#111111' : '#8B5CF6'};
+          box-shadow: 0 0 10px ${isLightMode ? 'rgba(17, 17, 17, 0.3)' : 'rgba(139, 92, 246, 0.5)'};
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+          box-shadow: 0 0 15px ${isLightMode ? 'rgba(17, 17, 17, 0.5)' : 'rgba(139, 92, 246, 0.7)'};
+        }
+        input[type="range"]::-moz-range-thumb {
+          background-color: ${isLightMode ? '#111111' : '#8B5CF6'};
+          box-shadow: 0 0 10px ${isLightMode ? 'rgba(17, 17, 17, 0.3)' : 'rgba(139, 92, 246, 0.5)'};
+          border: none;
+        }
+        input[type="range"]::-moz-range-thumb:hover {
+          box-shadow: 0 0 15px ${isLightMode ? 'rgba(17, 17, 17, 0.5)' : 'rgba(139, 92, 246, 0.7)'};
+        }
+        input[type="range"]::-webkit-slider-runnable-track {
+          background: transparent;
+        }
+        input[type="range"]::-moz-range-track {
+          background: transparent;
+        }
+      `}</style>
+      <div 
+        className="fixed bottom-16 md:bottom-0 left-0 right-0 backdrop-blur-xl px-4 py-3 md:py-3 z-20"
+        style={{
+          backgroundColor: isLightMode ? 'rgba(255, 255, 255, 0.94)' : 'rgba(5, 5, 5, 0.94)',
+          borderTop: isLightMode ? '1px solid rgba(0, 0, 0, 0.06)' : '1px solid rgba(255, 255, 255, 0.06)',
+          backdropFilter: 'blur(18px)'
+        }}
+        onClick={(e) => {
+          // Only open fullscreen if not clicking on control buttons
+          if (!e.target.closest('button')) {
+            onOpenFullscreen()
+          }
+        }}
+      >
+        <div className="max-w-screen-2xl mx-auto flex items-center gap-3 md:gap-4">
+          {/* Album Cover - Left */}
+          <div 
+            className="flex-shrink-0 cursor-pointer"
+            onClick={(e) => {
+              e.stopPropagation()
+              onOpenFullscreen()
+            }}
+          >
+            {imageError ? (
+              <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl flex items-center justify-center shadow-lg transition-all duration-300" style={{ backgroundColor: isLightMode ? '#E5E7EB' : '#121212', opacity: isTransitioning ? 0.5 : 1, transform: isTransitioning ? 'scale(0.95)' : 'scale(1)' }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ color: isLightMode ? '#6E6E73' : '#71717A' }}>
+                  <path d="M9 18V5l12-2v13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <circle cx="6" cy="18" r="3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <circle cx="18" cy="16" r="3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+            ) : (
+              <img
+                src={currentSong.cover}
+                alt={currentSong.title}
+                className="w-12 h-12 md:w-14 md:h-14 rounded-xl object-cover shadow-lg transition-all duration-300"
+                style={{ opacity: isTransitioning ? 0.5 : 1, transform: isTransitioning ? 'scale(0.95)' : 'scale(1)' }}
+                onError={() => setImageError(true)}
               />
-              <span className="text-xs text-[#8e8e93] w-10">
-                {audioRef.current ? formatTime(audioRef.current.duration) : '0:00'}
-              </span>
-            </div>
+            )}
           </div>
 
-          {/* Volume Control */}
-          <div className="flex items-center gap-2 w-40 justify-end">
+          {/* Song Info - Center */}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm md:text-base font-semibold truncate transition-all duration-300" style={{ color: isLightMode ? '#111111' : '#FFFFFF', opacity: isTransitioning ? 0.5 : 1, transform: isTransitioning ? 'translateX(-10px)' : 'translateX(0)' }}>{currentSong.title}</p>
+            {currentSong.artist && currentSong.artist !== 'Unknown Artist' && (
+              <p className="text-xs md:text-sm truncate transition-all duration-300" style={{ color: isLightMode ? '#6E6E73' : '#A1A1AA', opacity: isTransitioning ? 0.5 : 1, transform: isTransitioning ? 'translateX(-10px)' : 'translateX(0)' }}>{currentSong.artist}</p>
+            )}
+          </div>
+
+          {/* Controls - Right */}
+          <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
             <button
-              onClick={toggleMute}
-              className="text-[#8e8e93] hover:text-white transition-colors"
+              onClick={(e) => {
+                e.stopPropagation()
+                onPrevious()
+                hapticMedium()
+              }}
+              className="transition-colors p-1.5 md:p-2"
+              style={{ color: currentTheme.textMuted }}
             >
-              <Volume2 size={16} />
+              <SkipBack size={18} md:size={20} />
             </button>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={isMuted ? 0 : volume * 100}
-              onChange={handleVolumeChange}
-              className="w-20 h-1 bg-[#2a2a2a] rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-2 [&::-webkit-slider-thumb]:h-2 [&::-webkit-slider-thumb]:bg-[#00a8e8] [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:hover:scale-125 [&::-webkit-slider-thumb]:transition-transform"
-            />
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                isPlaying ? onPause() : onPlay(currentSong)
+                hapticMedium()
+              }}
+              className="w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all duration-150 shadow-lg active:scale-95 flex-shrink-0"
+              style={{ 
+                backgroundColor: currentTheme.accent, 
+                boxShadow: `0 0 20px ${currentTheme.accent}66, 0 4px 12px ${isLightMode ? 'rgba(0, 0, 0, 0.15)' : 'rgba(0, 0, 0, 0.3)'}`
+              }}
+            >
+              {isPlaying ? (
+                <Pause size={16} md:size={20} className={isLightMode ? 'text-black' : 'text-white'} transition-all duration-150 />
+              ) : (
+                <Play size={16} md:size={20} className={`ml-0.5 ${isLightMode ? 'text-black' : 'text-white'} transition-all duration-150`} />
+              )}
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onNext()
+                hapticMedium()
+              }}
+              className="transition-colors p-1.5 md:p-2"
+              style={{ color: currentTheme.textMuted }}
+            >
+              <SkipForward size={18} md:size={20} />
+            </button>
           </div>
         </div>
       </div>
