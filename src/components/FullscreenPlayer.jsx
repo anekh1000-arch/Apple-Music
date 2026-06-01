@@ -2,10 +2,14 @@ import { useState, useEffect } from 'react'
 import { Play, Pause, SkipBack, SkipForward, AlertCircle, ChevronDown } from 'lucide-react'
 import { hapticMedium, hapticLight } from '../lib/haptics'
 
-function FullscreenPlayer({ currentSong, isPlaying, progress, setProgress, onPlay, onPause, onNext, onPrevious, onClose, currentTheme, currentTime, duration, onSeek, isLightMode, dominantColor }) {
+function FullscreenPlayer({ currentSong, isPlaying, progress, setProgress, onPlay, onPause, onNext, onPrevious, onClose, currentTheme, currentTime, duration, onSeek, isLightMode, dominantColor, themeName, isMidnightBlackTheme, getMidnightBlackContrast }) {
   const [imageError, setImageError] = useState(false)
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [isClosing, setIsClosing] = useState(false)
+
+  // Get contrast colors for Midnight Black theme
+  const isMidnightBlack = isMidnightBlackTheme && isMidnightBlackTheme(themeName)
+  const contrastColors = isMidnightBlack ? getMidnightBlackContrast() : null
   
   // Swipe-down gesture state
   const [touchStartY, setTouchStartY] = useState(0)
@@ -235,15 +239,17 @@ function FullscreenPlayer({ currentSong, isPlaying, progress, setProgress, onPla
               hapticMedium()
             }}
             className="w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center transition-all duration-150 shadow-2xl active:scale-95"
-            style={{ 
-              backgroundColor: currentTheme.accent, 
-              boxShadow: `0 0 15px ${currentTheme.accent}66, 0 3px 8px ${isLightMode ? 'rgba(0, 0, 0, 0.15)' : 'rgba(0, 0, 0, 0.3)'}`
+            style={{
+              backgroundColor: isMidnightBlack ? contrastColors.playBg : currentTheme.accent,
+              boxShadow: isMidnightBlack
+                ? `0 0 15px ${contrastColors.playBg}66, 0 3px 8px ${isLightMode ? 'rgba(0, 0, 0, 0.15)' : 'rgba(0, 0, 0, 0.3)'}`
+                : `0 0 15px ${currentTheme.accent}66, 0 3px 8px ${isLightMode ? 'rgba(0, 0, 0, 0.15)' : 'rgba(0, 0, 0, 0.3)'}`
             }}
           >
             {isPlaying ? (
-              <Pause size={18} md:size={22} className={isLightMode ? 'text-black' : 'text-white'} transition-all duration-150 />
+              <Pause size={18} md:size={22} style={{ color: isMidnightBlack ? contrastColors.playIcon : (isLightMode ? '#000000' : '#FFFFFF') }} transition-all duration-150 />
             ) : (
-              <Play size={18} md:size={22} className={`ml-0.5 ${isLightMode ? 'text-black' : 'text-white'} transition-all duration-150`} />
+              <Play size={18} md:size={22} style={{ color: isMidnightBlack ? contrastColors.playIcon : (isLightMode ? '#000000' : '#FFFFFF'), marginLeft: '2px' }} transition-all duration-150 />
             )}
           </button>
           <button

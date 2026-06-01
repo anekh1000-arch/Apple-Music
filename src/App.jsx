@@ -57,6 +57,22 @@ const themes = {
   }
 }
 
+// Helper function to check if current theme is Midnight Black
+const isMidnightBlackTheme = (themeName) => {
+  return themeName === 'midnight-black'
+}
+
+// Helper function to get contrast-aware colors for Midnight Black
+const getMidnightBlackContrast = () => {
+  return {
+    activeBg: 'rgba(255, 255, 255, 0.10)',
+    activeText: '#FFFFFF',
+    activeBorder: 'rgba(255, 255, 255, 0.12)',
+    playBg: '#FFFFFF',
+    playIcon: '#111111'
+  }
+}
+
 function App() {
   const audioRef = useRef(null)
   const [songsData, setSongsData] = useState(songs)
@@ -752,13 +768,16 @@ function App() {
       
       {/* Content */}
       <div className="relative z-10 flex h-screen w-full">
-        <Sidebar 
-          view={view} 
+        <Sidebar
+          view={view}
           setView={setView}
           playlist={playlist}
           removeFromPlaylist={removeFromPlaylist}
           currentTheme={appliedTheme}
           isLightMode={isLightMode}
+          themeName={theme}
+          isMidnightBlackTheme={isMidnightBlackTheme}
+          getMidnightBlackContrast={getMidnightBlackContrast}
         />
         <MainContent 
           view={view}
@@ -801,7 +820,7 @@ function App() {
         onTimeUpdate={handleTimeUpdate}
         onEnded={handleNext}
       />
-      <Player 
+      <Player
         currentSong={currentSong}
         isPlaying={isPlaying}
         progress={progress}
@@ -822,6 +841,9 @@ function App() {
         onTimeUpdate={handleTimeUpdate}
         isLightMode={isLightMode}
         dominantColor={dominantColor}
+        themeName={theme}
+        isMidnightBlackTheme={isMidnightBlackTheme}
+        getMidnightBlackContrast={getMidnightBlackContrast}
       />
       
       {/* Fullscreen Player - z-50 for highest layer */}
@@ -842,6 +864,9 @@ function App() {
           onSeek={handleSeek}
           isLightMode={isLightMode}
           dominantColor={dominantColor}
+          themeName={theme}
+          isMidnightBlackTheme={isMidnightBlackTheme}
+          getMidnightBlackContrast={getMidnightBlackContrast}
         />
       )}
     </div>

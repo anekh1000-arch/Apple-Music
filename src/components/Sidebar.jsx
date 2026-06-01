@@ -2,7 +2,7 @@ import { Home, Search, Music, Heart, Settings, ListMusic } from 'lucide-react'
 import { useState } from 'react'
 import { hapticSelection } from '../lib/haptics'
 
-function Sidebar({ view, setView, playlist, removeFromPlaylist, currentTheme, isLightMode }) {
+function Sidebar({ view, setView, playlist, removeFromPlaylist, currentTheme, isLightMode, themeName, isMidnightBlackTheme, getMidnightBlackContrast }) {
   const [imageErrors, setImageErrors] = useState({})
 
   const handleImageError = (songId) => {
@@ -17,6 +17,10 @@ function Sidebar({ view, setView, playlist, removeFromPlaylist, currentTheme, is
     { id: 'favorites', icon: Heart, label: 'Favorites' },
     { id: 'settings', icon: Settings, label: 'Settings' },
   ]
+
+  // Get contrast colors for Midnight Black theme
+  const isMidnightBlack = isMidnightBlackTheme && isMidnightBlackTheme(themeName)
+  const contrastColors = isMidnightBlack ? getMidnightBlackContrast() : null
 
   // Mobile bottom navigation
   const mobileMenuItems = [
@@ -54,12 +58,21 @@ function Sidebar({ view, setView, playlist, removeFromPlaylist, currentTheme, is
                         : ''
                     }`}
                     style={{
-                      color: view === item.id ? (isLightMode ? 'black' : 'white') : currentTheme.textMuted,
-                      backgroundColor: view === item.id ? currentTheme.accent : 'transparent'
+                      color: view === item.id
+                        ? (isMidnightBlack ? contrastColors.activeText : (isLightMode ? 'black' : 'white'))
+                        : currentTheme.textMuted,
+                      backgroundColor: view === item.id
+                        ? (isMidnightBlack ? contrastColors.activeBg : currentTheme.accent)
+                        : 'transparent',
+                      border: view === item.id && isMidnightBlack ? `1px solid ${contrastColors.activeBorder}` : 'none'
                     }}
                   >
-                    <Icon size={16} style={{ color: view === item.id ? (isLightMode ? 'black' : 'white') : currentTheme.textMuted }} />
-                    <span className="text-sm" style={{ color: view === item.id ? (isLightMode ? 'black' : 'white') : currentTheme.text }}>{item.label}</span>
+                    <Icon size={16} style={{ color: view === item.id
+                      ? (isMidnightBlack ? contrastColors.activeText : (isLightMode ? 'black' : 'white'))
+                      : currentTheme.textMuted }} />
+                    <span className="text-sm" style={{ color: view === item.id
+                      ? (isMidnightBlack ? contrastColors.activeText : (isLightMode ? 'black' : 'white'))
+                      : currentTheme.text }}>{item.label}</span>
                   </button>
                 </li>
               )
