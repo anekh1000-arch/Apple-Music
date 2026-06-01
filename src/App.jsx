@@ -181,9 +181,56 @@ function App() {
   // Fetch songs from Supabase on mount, fallback to songs.js
   const FORCE_LOCAL_MODE = false
 
+  // Cover arts array - all available cover images
+  const COVER_ARTS = [
+    '/covers/cover-01.jpg',
+    '/covers/cover-02.jpg',
+    '/covers/cover-03.jpg',
+    '/covers/cover-04.jpg',
+    '/covers/cover-05.jpg',
+    '/covers/cover-06.jpg',
+    '/covers/cover-07.jpg',
+    '/covers/cover-08.jpg',
+    '/covers/cover-09.jpg',
+    '/covers/cover-10.jpg',
+    '/covers/cover-11.jpg',
+    '/covers/cover-12.jpg',
+    '/covers/cover-13.jpg',
+    '/covers/cover-14.jpg',
+    '/covers/cover-15.jpg',
+    '/covers/cover-16.jpg',
+    '/covers/cover-17.jpg',
+    '/covers/cover-18.jpg',
+    '/covers/cover-19.jpg',
+    '/covers/cover-20.jpg',
+    '/covers/cover-21.jpg',
+    '/covers/cover-22.jpg',
+    '/covers/cover-23.jpg',
+    '/covers/cover-24.jpg',
+    '/covers/cover-25.jpg',
+    '/covers/cover-26.jpg',
+    '/covers/cover-27.jpg',
+    '/covers/cover-28.jpg',
+    '/covers/cover-29.jpg',
+    '/covers/cover-30.jpg',
+    '/covers/cover-31.jpg'
+  ]
+
+  // Stable hash function for consistent cover assignment
+  const getCoverIndex = (song, index) => {
+    const hash = song.id || song.title || index
+    const hashString = String(hash)
+    let hashValue = 0
+    for (let i = 0; i < hashString.length; i++) {
+      hashValue = ((hashValue << 5) - hashValue) + hashString.charCodeAt(i)
+      hashValue = hashValue & hashValue
+    }
+    return Math.abs(hashValue) % COVER_ARTS.length
+  }
+
   // Clear local cache on app load to ensure fresh data
   useEffect(() => {
-    const SONG_CACHE_VERSION = 'v2'
+    const SONG_CACHE_VERSION = 'v3'
     const cachedVersion = localStorage.getItem('songCacheVersion')
     
     if (cachedVersion !== SONG_CACHE_VERSION) {
@@ -212,17 +259,20 @@ function App() {
         console.log('Fallback reason:', FORCE_LOCAL_MODE ? 'FORCE_LOCAL_MODE is true' : 'Supabase not configured')
         console.log('Song source used: songs.js (local fallback)')
         
-        // Apply common cover art to songs.js fallback
-        const COMMON_COVER_ART = '/covers/cover-01.jpg'
-        console.log('Using common cover art for all songs:', COMMON_COVER_ART)
-        const songsWithCommonCover = songs.map(song => ({
-          ...song,
-          cover: COMMON_COVER_ART
-        }))
+        // Apply stable random cover art to songs.js fallback
+        console.log('Using stable random cover art assignment from', COVER_ARTS.length, 'cover images')
+        const songsWithRandomCovers = songs.map((song, index) => {
+          const coverIndex = getCoverIndex(song, index)
+          const assignedCover = COVER_ARTS.length > 0 ? COVER_ARTS[coverIndex] : song.cover
+          return {
+            ...song,
+            cover: assignedCover
+          }
+        })
         
-        setSongsData(songsWithCommonCover)
-        console.log('Loaded songs count:', songsWithCommonCover.length)
-        console.log('First 5 songs:', songsWithCommonCover.slice(0, 5))
+        setSongsData(songsWithRandomCovers)
+        console.log('Loaded songs count:', songsWithRandomCovers.length)
+        console.log('First 5 songs:', songsWithRandomCovers.slice(0, 5))
         setLoading(false)
         return
       }
@@ -240,32 +290,37 @@ function App() {
           console.log('Song source used: songs.js (Supabase error fallback)')
           setError('Failed to fetch from Supabase, using fallback')
           
-          // Apply common cover art to fallback
-          const COMMON_COVER_ART = '/covers/cover-01.jpg'
-          console.log('Using common cover art for all songs:', COMMON_COVER_ART)
-          const songsWithCommonCover = songs.map(song => ({
-            ...song,
-            cover: COMMON_COVER_ART
-          }))
+          // Apply stable random cover art to fallback
+          console.log('Using stable random cover art assignment from', COVER_ARTS.length, 'cover images')
+          const songsWithRandomCovers = songs.map((song, index) => {
+            const coverIndex = getCoverIndex(song, index)
+            const assignedCover = COVER_ARTS.length > 0 ? COVER_ARTS[coverIndex] : song.cover
+            return {
+              ...song,
+              cover: assignedCover
+            }
+          })
           
-          setSongsData(songsWithCommonCover)
-          console.log('Loaded songs count:', songsWithCommonCover.length)
-          console.log('First 5 songs:', songsWithCommonCover.slice(0, 5))
+          setSongsData(songsWithRandomCovers)
+          console.log('Loaded songs count:', songsWithRandomCovers.length)
+          console.log('First 5 songs:', songsWithRandomCovers.slice(0, 5))
         } else if (data && data.length > 0) {
           console.log('Supabase fetch SUCCESS')
           console.log('Number of songs returned:', data.length)
           console.log('First song data:', data[0])
           
           // Map snake_case to camelCase and validate
-          const COMMON_COVER_ART = '/covers/cover-01.jpg'
-          console.log('Using common cover art for all songs:', COMMON_COVER_ART)
+          console.log('Using stable random cover art assignment from', COVER_ARTS.length, 'cover images')
           const mappedSongs = data
-            .map(song => ({
-              ...song,
-              audioUrl: song.audio_url,
-              // Override all covers to use common cover art
-              cover: COMMON_COVER_ART
-            }))
+            .map((song, index) => {
+              const coverIndex = getCoverIndex(song, index)
+              const assignedCover = COVER_ARTS.length > 0 ? COVER_ARTS[coverIndex] : song.cover_url || song.cover
+              return {
+                ...song,
+                audioUrl: song.audio_url,
+                cover: assignedCover
+              }
+            })
             .filter(song => {
               // Validate song has required fields
               const hasTitle = song.title && song.title.trim().length > 0
@@ -291,17 +346,20 @@ function App() {
           console.log('Falling back to songs.js')
           console.log('Song source used: songs.js (Supabase empty fallback)')
           
-          // Apply common cover art to fallback
-          const COMMON_COVER_ART = '/covers/cover-01.jpg'
-          console.log('Using common cover art for all songs:', COMMON_COVER_ART)
-          const songsWithCommonCover = songs.map(song => ({
-            ...song,
-            cover: COMMON_COVER_ART
-          }))
+          // Apply stable random cover art to fallback
+          console.log('Using stable random cover art assignment from', COVER_ARTS.length, 'cover images')
+          const songsWithRandomCovers = songs.map((song, index) => {
+            const coverIndex = getCoverIndex(song, index)
+            const assignedCover = COVER_ARTS.length > 0 ? COVER_ARTS[coverIndex] : song.cover
+            return {
+              ...song,
+              cover: assignedCover
+            }
+          })
           
-          setSongsData(songsWithCommonCover)
-          console.log('Loaded songs count:', songsWithCommonCover.length)
-          console.log('First 5 songs:', songsWithCommonCover.slice(0, 5))
+          setSongsData(songsWithRandomCovers)
+          console.log('Loaded songs count:', songsWithRandomCovers.length)
+          console.log('First 5 songs:', songsWithRandomCovers.slice(0, 5))
           console.log('=== Using songs.js Fallback ===')
         }
       } catch (err) {
@@ -310,17 +368,20 @@ function App() {
         console.log('Song source used: songs.js (exception fallback)')
         setError('Failed to fetch from Supabase, using fallback')
         
-        // Apply common cover art to fallback
-        const COMMON_COVER_ART = '/covers/cover-01.jpg'
-        console.log('Using common cover art for all songs:', COMMON_COVER_ART)
-        const songsWithCommonCover = songs.map(song => ({
-          ...song,
-          cover: COMMON_COVER_ART
-        }))
+        // Apply stable random cover art to fallback
+        console.log('Using stable random cover art assignment from', COVER_ARTS.length, 'cover images')
+        const songsWithRandomCovers = songs.map((song, index) => {
+          const coverIndex = getCoverIndex(song, index)
+          const assignedCover = COVER_ARTS.length > 0 ? COVER_ARTS[coverIndex] : song.cover
+          return {
+            ...song,
+            cover: assignedCover
+          }
+        })
         
-        setSongsData(songsWithCommonCover)
-        console.log('Loaded songs count:', songsWithCommonCover.length)
-        console.log('First 5 songs:', songsWithCommonCover.slice(0, 5))
+        setSongsData(songsWithRandomCovers)
+        console.log('Loaded songs count:', songsWithRandomCovers.length)
+        console.log('First 5 songs:', songsWithRandomCovers.slice(0, 5))
         console.log('=== Using songs.js Fallback ===')
       } finally {
         setLoading(false)
