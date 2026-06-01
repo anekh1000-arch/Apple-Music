@@ -406,7 +406,7 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
               <div className="mb-8">
                 <h2 className="text-lg font-semibold mb-4" style={{ color: isLightMode ? '#111111' : '#FFFFFF' }}>Recently Played</h2>
                 <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
-                  {recentlyPlayed.slice(0, 8).map((song) => (
+                  {recentlyPlayed.map((song) => (
                     <div
                       key={song.id}
                       onClick={() => handleAlbumClick(song)}
@@ -449,7 +449,7 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
             <div className="mb-8">
               <h2 className="text-lg font-semibold mb-4" style={{ color: isLightMode ? '#111111' : '#FFFFFF' }}>Recently Added</h2>
               <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
-                {songs.slice(0, 8).map((song) => (
+                {songs.map((song) => (
                   <div
                     key={song.id}
                     onClick={() => handleAlbumClick(song)}
@@ -556,7 +556,7 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
           <div className="w-full">
             <h2 className="text-2xl font-semibold mb-2" style={{ color: currentTheme.text }}>Favorites</h2>
             <p className="mb-6 text-sm" style={{ color: currentTheme.textMuted }}>Your favorite tracks</p>
-            <SongList songs={songs.slice(0, 4)} onPlay={onPlay} currentSong={currentSong} addToPlaylist={addToPlaylist} playlist={playlist} addToQueue={addToQueue} queue={queue} imageErrors={imageErrors} handleImageError={handleImageError} currentTheme={currentTheme} isLightMode={isLightMode} />
+            <SongList songs={songs} onPlay={onPlay} currentSong={currentSong} addToPlaylist={addToPlaylist} playlist={playlist} addToQueue={addToQueue} queue={queue} imageErrors={imageErrors} handleImageError={handleImageError} currentTheme={currentTheme} isLightMode={isLightMode} />
           </div>
         )
       case 'settings':

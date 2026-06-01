@@ -181,6 +181,13 @@ function App() {
   // Fetch songs from Supabase on mount, fallback to songs.js
   const FORCE_LOCAL_MODE = false
 
+  // Clear local cache on app load to ensure fresh data
+  useEffect(() => {
+    localStorage.removeItem('playbackSession')
+    localStorage.removeItem('listeningStats')
+    console.log('Local cache cleared')
+  }, [])
+
   useEffect(() => {
     async function fetchSongs() {
       console.log('=== Supabase Fetch Started ===')
@@ -190,6 +197,9 @@ function App() {
       if (FORCE_LOCAL_MODE || !isSupabaseConfigured) {
         console.log('Using songs.js fallback (forced local mode for testing)')
         console.log('Fallback reason:', FORCE_LOCAL_MODE ? 'FORCE_LOCAL_MODE is true' : 'Supabase not configured')
+        setSongsData(songs)
+        console.log('Loaded songs count:', songs.length)
+        console.log('Loaded songs:', songs)
         setLoading(false)
         return
       }
@@ -206,24 +216,45 @@ function App() {
           console.log('Falling back to songs.js due to Supabase error')
           setError('Failed to fetch from Supabase, using fallback')
           setSongsData(songs)
+          console.log('Loaded songs count:', songs.length)
+          console.log('Loaded songs:', songs)
         } else if (data && data.length > 0) {
           console.log('Supabase fetch SUCCESS')
           console.log('Number of songs returned:', data.length)
           console.log('First song data:', data[0])
-          // Map snake_case to camelCase
-          const mappedSongs = data.map(song => ({
-            ...song,
-            audioUrl: song.audio_url,
-            // Add any other field mappings if needed
-          }))
+          
+          // Map snake_case to camelCase and validate
+          const mappedSongs = data
+            .map(song => ({
+              ...song,
+              audioUrl: song.audio_url,
+              // Add any other field mappings if needed
+            }))
+            .filter(song => {
+              // Validate song has required fields
+              const hasTitle = song.title && song.title.trim().length > 0
+              const hasAudioUrl = song.audioUrl && song.audioUrl.trim().length > 0
+              const isValid = hasTitle && hasAudioUrl
+              
+              if (!isValid) {
+                console.warn('Filtered out invalid song:', song)
+              }
+              
+              return isValid
+            })
+          
           console.log('Mapped song object:', mappedSongs[0])
+          console.log('Valid songs count after filtering:', mappedSongs.length)
           setSongsData(mappedSongs)
           console.log(`Loaded ${mappedSongs.length} songs from Supabase`)
+          console.log('Loaded songs:', mappedSongs)
           console.log('=== Using Supabase Data Source ===')
         } else {
           console.log('Supabase returned empty array')
           console.log('Falling back to songs.js')
           setSongsData(songs)
+          console.log('Loaded songs count:', songs.length)
+          console.log('Loaded songs:', songs)
           console.log('=== Using songs.js Fallback ===')
         }
       } catch (err) {
@@ -231,6 +262,8 @@ function App() {
         console.log('Falling back to songs.js due to exception')
         setError('Failed to fetch from Supabase, using fallback')
         setSongsData(songs)
+        console.log('Loaded songs count:', songs.length)
+        console.log('Loaded songs:', songs)
         console.log('=== Using songs.js Fallback ===')
       } finally {
         setLoading(false)
