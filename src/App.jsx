@@ -211,9 +211,18 @@ function App() {
         console.log('Using songs.js fallback (forced local mode for testing)')
         console.log('Fallback reason:', FORCE_LOCAL_MODE ? 'FORCE_LOCAL_MODE is true' : 'Supabase not configured')
         console.log('Song source used: songs.js (local fallback)')
-        setSongsData(songs)
-        console.log('Loaded songs count:', songs.length)
-        console.log('First 5 songs:', songs.slice(0, 5))
+        
+        // Apply common cover art to songs.js fallback
+        const COMMON_COVER_ART = '/covers/cover-01.jpg'
+        console.log('Using common cover art for all songs:', COMMON_COVER_ART)
+        const songsWithCommonCover = songs.map(song => ({
+          ...song,
+          cover: COMMON_COVER_ART
+        }))
+        
+        setSongsData(songsWithCommonCover)
+        console.log('Loaded songs count:', songsWithCommonCover.length)
+        console.log('First 5 songs:', songsWithCommonCover.slice(0, 5))
         setLoading(false)
         return
       }
@@ -230,20 +239,32 @@ function App() {
           console.log('Falling back to songs.js due to Supabase error')
           console.log('Song source used: songs.js (Supabase error fallback)')
           setError('Failed to fetch from Supabase, using fallback')
-          setSongsData(songs)
-          console.log('Loaded songs count:', songs.length)
-          console.log('First 5 songs:', songs.slice(0, 5))
+          
+          // Apply common cover art to fallback
+          const COMMON_COVER_ART = '/covers/cover-01.jpg'
+          console.log('Using common cover art for all songs:', COMMON_COVER_ART)
+          const songsWithCommonCover = songs.map(song => ({
+            ...song,
+            cover: COMMON_COVER_ART
+          }))
+          
+          setSongsData(songsWithCommonCover)
+          console.log('Loaded songs count:', songsWithCommonCover.length)
+          console.log('First 5 songs:', songsWithCommonCover.slice(0, 5))
         } else if (data && data.length > 0) {
           console.log('Supabase fetch SUCCESS')
           console.log('Number of songs returned:', data.length)
           console.log('First song data:', data[0])
           
           // Map snake_case to camelCase and validate
+          const COMMON_COVER_ART = '/covers/cover-01.jpg'
+          console.log('Using common cover art for all songs:', COMMON_COVER_ART)
           const mappedSongs = data
             .map(song => ({
               ...song,
               audioUrl: song.audio_url,
-              // Add any other field mappings if needed
+              // Override all covers to use common cover art
+              cover: COMMON_COVER_ART
             }))
             .filter(song => {
               // Validate song has required fields
@@ -269,9 +290,18 @@ function App() {
           console.log('Supabase returned empty array')
           console.log('Falling back to songs.js')
           console.log('Song source used: songs.js (Supabase empty fallback)')
-          setSongsData(songs)
-          console.log('Loaded songs count:', songs.length)
-          console.log('First 5 songs:', songs.slice(0, 5))
+          
+          // Apply common cover art to fallback
+          const COMMON_COVER_ART = '/covers/cover-01.jpg'
+          console.log('Using common cover art for all songs:', COMMON_COVER_ART)
+          const songsWithCommonCover = songs.map(song => ({
+            ...song,
+            cover: COMMON_COVER_ART
+          }))
+          
+          setSongsData(songsWithCommonCover)
+          console.log('Loaded songs count:', songsWithCommonCover.length)
+          console.log('First 5 songs:', songsWithCommonCover.slice(0, 5))
           console.log('=== Using songs.js Fallback ===')
         }
       } catch (err) {
@@ -279,9 +309,18 @@ function App() {
         console.log('Falling back to songs.js due to exception')
         console.log('Song source used: songs.js (exception fallback)')
         setError('Failed to fetch from Supabase, using fallback')
-        setSongsData(songs)
-        console.log('Loaded songs count:', songs.length)
-        console.log('First 5 songs:', songs.slice(0, 5))
+        
+        // Apply common cover art to fallback
+        const COMMON_COVER_ART = '/covers/cover-01.jpg'
+        console.log('Using common cover art for all songs:', COMMON_COVER_ART)
+        const songsWithCommonCover = songs.map(song => ({
+          ...song,
+          cover: COMMON_COVER_ART
+        }))
+        
+        setSongsData(songsWithCommonCover)
+        console.log('Loaded songs count:', songsWithCommonCover.length)
+        console.log('First 5 songs:', songsWithCommonCover.slice(0, 5))
         console.log('=== Using songs.js Fallback ===')
       } finally {
         setLoading(false)
