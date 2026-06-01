@@ -183,23 +183,37 @@ function App() {
 
   // Clear local cache on app load to ensure fresh data
   useEffect(() => {
-    localStorage.removeItem('playbackSession')
-    localStorage.removeItem('listeningStats')
-    console.log('Local cache cleared')
+    const SONG_CACHE_VERSION = 'v2'
+    const cachedVersion = localStorage.getItem('songCacheVersion')
+    
+    if (cachedVersion !== SONG_CACHE_VERSION) {
+      console.log('Song cache version mismatch, clearing cache')
+      localStorage.removeItem('playbackSession')
+      localStorage.removeItem('listeningStats')
+      localStorage.removeItem('songCacheVersion')
+      localStorage.setItem('songCacheVersion', SONG_CACHE_VERSION)
+    } else {
+      console.log('Song cache version matches:', SONG_CACHE_VERSION)
+    }
   }, [])
 
   useEffect(() => {
     async function fetchSongs() {
       console.log('=== Supabase Fetch Started ===')
+      console.log('ENV:', import.meta.env.MODE)
+      console.log('VITE_SUPABASE_URL:', import.meta.env.VITE_SUPABASE_URL ? 'SET' : 'NOT SET')
+      console.log('VITE_SUPABASE_ANON_KEY:', import.meta.env.VITE_SUPABASE_ANON_KEY ? 'SET' : 'NOT SET')
       console.log('FORCE_LOCAL_MODE:', FORCE_LOCAL_MODE)
       console.log('isSupabaseConfigured:', isSupabaseConfigured)
+      console.log('supabase client:', supabase ? 'CREATED' : 'NULL')
 
       if (FORCE_LOCAL_MODE || !isSupabaseConfigured) {
         console.log('Using songs.js fallback (forced local mode for testing)')
         console.log('Fallback reason:', FORCE_LOCAL_MODE ? 'FORCE_LOCAL_MODE is true' : 'Supabase not configured')
+        console.log('Song source used: songs.js (local fallback)')
         setSongsData(songs)
         console.log('Loaded songs count:', songs.length)
-        console.log('Loaded songs:', songs)
+        console.log('First 5 songs:', songs.slice(0, 5))
         setLoading(false)
         return
       }
@@ -214,10 +228,11 @@ function App() {
         if (error) {
           console.error('Supabase error:', error)
           console.log('Falling back to songs.js due to Supabase error')
+          console.log('Song source used: songs.js (Supabase error fallback)')
           setError('Failed to fetch from Supabase, using fallback')
           setSongsData(songs)
           console.log('Loaded songs count:', songs.length)
-          console.log('Loaded songs:', songs)
+          console.log('First 5 songs:', songs.slice(0, 5))
         } else if (data && data.length > 0) {
           console.log('Supabase fetch SUCCESS')
           console.log('Number of songs returned:', data.length)
@@ -247,23 +262,26 @@ function App() {
           console.log('Valid songs count after filtering:', mappedSongs.length)
           setSongsData(mappedSongs)
           console.log(`Loaded ${mappedSongs.length} songs from Supabase`)
-          console.log('Loaded songs:', mappedSongs)
+          console.log('Song source used: Supabase (production database)')
+          console.log('First 5 songs:', mappedSongs.slice(0, 5))
           console.log('=== Using Supabase Data Source ===')
         } else {
           console.log('Supabase returned empty array')
           console.log('Falling back to songs.js')
+          console.log('Song source used: songs.js (Supabase empty fallback)')
           setSongsData(songs)
           console.log('Loaded songs count:', songs.length)
-          console.log('Loaded songs:', songs)
+          console.log('First 5 songs:', songs.slice(0, 5))
           console.log('=== Using songs.js Fallback ===')
         }
       } catch (err) {
         console.error('Error fetching songs:', err)
         console.log('Falling back to songs.js due to exception')
+        console.log('Song source used: songs.js (exception fallback)')
         setError('Failed to fetch from Supabase, using fallback')
         setSongsData(songs)
         console.log('Loaded songs count:', songs.length)
-        console.log('Loaded songs:', songs)
+        console.log('First 5 songs:', songs.slice(0, 5))
         console.log('=== Using songs.js Fallback ===')
       } finally {
         setLoading(false)
