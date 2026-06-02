@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Play, Pause, SkipBack, SkipForward, AlertCircle, ChevronDown } from 'lucide-react'
 import { hapticLight, hapticMedium, hapticSelection } from '../lib/haptics'
-import { getCoverForSong, getPlayerCoverForSong } from '../utils/covers'
+import { getCoverForSong } from '../utils/covers'
 
 function FullscreenPlayer({ currentSong, isPlaying, progress, setProgress, onPlay, onPause, onNext, onPrevious, onClose, currentTheme, currentTime, duration, onSeek, isLightMode, dominantColor, themeName, isMidnightBlackTheme, getMidnightBlackContrast, songs }) {
   const [imageError, setImageError] = useState(false)
@@ -138,15 +138,21 @@ function FullscreenPlayer({ currentSong, isPlaying, progress, setProgress, onPla
       {/* Background with blur */}
       <div className="absolute inset-0 z-0">
         {(() => {
-          const currentSongIndex = songs?.findIndex(s => s.id === currentSong.id || s.title === currentSong.title) ?? 0;
+          const currentSongIndex = songs?.findIndex((s) =>
+            s.id === currentSong?.id ||
+            s.title === currentSong?.title ||
+            s.name === currentSong?.name
+          ) ?? 0;
           const safeIndex = currentSongIndex >= 0 ? currentSongIndex : 0;
-          const playerCoverSrc = getPlayerCoverForSong(currentSong, safeIndex);
+          const coverSrc = getCoverForSong(currentSong, safeIndex);
+          
+          console.log("FULL PLAYER BACKGROUND COVER:", coverSrc, currentSong);
           
           return imageError ? (
             <div className="w-full h-full" style={{ backgroundColor: currentTheme.surfaceLight }} />
           ) : (
             <img
-              src={playerCoverSrc}
+              src={coverSrc}
               alt=""
               className="w-full h-full object-cover opacity-40 blur-3xl scale-125"
               onError={() => setImageError(true)}
@@ -179,9 +185,15 @@ function FullscreenPlayer({ currentSong, isPlaying, progress, setProgress, onPla
         {/* Album Art */}
         <div className="mb-6">
           {(() => {
-            const currentSongIndex = songs?.findIndex(s => s.id === currentSong.id || s.title === currentSong.title) ?? 0;
+            const currentSongIndex = songs?.findIndex((s) =>
+              s.id === currentSong?.id ||
+              s.title === currentSong?.title ||
+              s.name === currentSong?.name
+            ) ?? 0;
             const safeIndex = currentSongIndex >= 0 ? currentSongIndex : 0;
-            const playerCoverSrc = getPlayerCoverForSong(currentSong, safeIndex);
+            const coverSrc = getCoverForSong(currentSong, safeIndex);
+            
+            console.log("FULL PLAYER COVER:", coverSrc, currentSong);
             
             return imageError ? (
               <div className="w-64 h-64 md:w-72 md:h-72 rounded-3xl flex items-center justify-center shadow-2xl transition-all duration-300" style={{ backgroundColor: currentTheme.surfaceLight, opacity: isTransitioning ? 0.5 : 1, transform: isTransitioning ? 'scale(0.95)' : 'scale(1)' }}>
@@ -189,8 +201,8 @@ function FullscreenPlayer({ currentSong, isPlaying, progress, setProgress, onPla
               </div>
             ) : (
               <img
-                src={playerCoverSrc}
-                alt={currentSong.title}
+                src={coverSrc}
+                alt={currentSong?.title || currentSong?.name || "Now playing"}
                 className="w-64 h-64 md:w-72 md:h-72 rounded-3xl shadow-2xl transition-all duration-300 hover:scale-105"
                 style={{ 
                   objectFit: 'cover',
@@ -201,7 +213,9 @@ function FullscreenPlayer({ currentSong, isPlaying, progress, setProgress, onPla
                   opacity: isTransitioning ? 0.5 : 1, 
                   transform: isTransitioning ? 'scale(0.95)' : 'scale(1)' 
                 }}
-                onError={() => setImageError(true)}
+                onError={(e) => {
+                  e.currentTarget.src = "/covers/cover-01.jpg";
+                }}
               />
             );
           })()}
