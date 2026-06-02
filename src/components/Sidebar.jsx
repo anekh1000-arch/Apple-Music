@@ -120,8 +120,8 @@ function Sidebar({ view, setView, playlist, removeFromPlaylist, currentTheme, is
       </aside>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 backdrop-blur-xl z-30" style={{ padding: '8px 0 calc(8px + env(safe-area-inset-bottom))', backgroundColor: isLightMode ? 'rgba(255, 255, 255, 0.95)' : 'rgba(5, 5, 5, 0.95)', borderTop: isLightMode ? '1px solid rgba(0, 0, 0, 0.06)' : '1px solid rgba(255, 255, 255, 0.06)' }}>
-        <div className="flex justify-around items-center">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 backdrop-blur-xl z-30" style={{ height: '64px', minHeight: '64px', paddingTop: '6px', paddingBottom: 'calc(6px + env(safe-area-inset-bottom))', backgroundColor: isLightMode ? 'rgba(255, 255, 255, 0.95)' : 'rgba(5, 5, 5, 0.95)', borderTop: isLightMode ? '1px solid rgba(0, 0, 0, 0.06)' : '1px solid rgba(255, 255, 255, 0.06)' }}>
+        <div className="flex justify-around items-center" style={{ height: '100%' }}>
           {mobileMenuItems.map((item) => {
             const Icon = item.icon
             return (
@@ -134,16 +134,17 @@ function Sidebar({ view, setView, playlist, removeFromPlaylist, currentTheme, is
                 className="flex flex-col items-center justify-center px-0 py-0"
                 style={{
                   flex: 1,
-                  height: '56px',
-                  gap: '4px',
+                  height: '100%',
+                  minHeight: '44px',
+                  gap: '2px',
                   color: view === item.id ? (isLightMode ? '#111111' : '#FFFFFF') : (isLightMode ? '#6E6E73' : '#8A8A93'),
                   backgroundColor: 'transparent',
                   padding: 0,
                   margin: 0
                 }}
               >
-                <Icon size={22} style={{ width: '22px', height: '22px', display: 'block', color: view === item.id ? (isLightMode ? '#111111' : '#FFFFFF') : (isLightMode ? '#6E6E73' : '#8A8A93') }} />
-                <span className="font-medium" style={{ fontSize: '12px', fontWeight: 500, lineHeight: 1, marginTop: '0', color: view === item.id ? (isLightMode ? '#111111' : '#FFFFFF') : (isLightMode ? '#6E6E73' : '#8A8A93') }}>{item.label}</span>
+                <Icon size={23} style={{ width: '23px', height: '23px', minWidth: '23px', minHeight: '23px', display: 'block', color: view === item.id ? (isLightMode ? '#111111' : '#FFFFFF') : (isLightMode ? '#6E6E73' : '#8A8A93') }} />
+                <span className="font-medium" style={{ fontSize: '11px', fontWeight: 500, lineHeight: 1, marginTop: '0', color: view === item.id ? (isLightMode ? '#111111' : '#FFFFFF') : (isLightMode ? '#6E6E73' : '#8A8A93') }}>{item.label}</span>
               </button>
             )
           })}

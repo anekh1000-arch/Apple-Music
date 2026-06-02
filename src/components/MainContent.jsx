@@ -5,11 +5,11 @@ import { getDailyPick, getDailyRecommendations } from '../lib/dailyPick'
 import { getCoverForSong } from '../utils/covers'
 
 function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, addToPlaylist, playlist, queue, addToQueue, removeFromQueue, playFromQueue, recentlyPlayed, songs, loading, error, onOpenFullscreen, listeningStats, favoriteArtist, favoriteAlbum, theme, currentTheme, onThemeChange, themes, slideDirection, isAnimating, isLightMode, onAppearanceChange, hapticFeedbackEnabled, setHapticFeedbackEnabled, favoriteSongs, toggleFavorite, sleepTimer, setSleepTimer }) {
-  const filteredSongs = songs.filter(song =>
+  const filteredSongs = useMemo(() => songs.filter(song =>
     song.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     song.artist.toLowerCase().includes(searchQuery.toLowerCase()) ||
     song.album.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  ), [songs, searchQuery])
 
   const [imageErrors, setImageErrors] = useState({})
   const [featuredSong, setFeaturedSong] = useState(null)
