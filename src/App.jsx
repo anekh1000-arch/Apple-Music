@@ -352,6 +352,10 @@ function App() {
           
           console.log('Mapped song object:', mappedSongs[0])
           console.log('Valid songs count after filtering:', mappedSongs.length)
+          console.log('First 10 assigned covers:', mappedSongs.slice(0, 10).map(s => ({
+            title: s.title,
+            cover: s.cover
+          })))
           setSongsData(mappedSongs)
           console.log(`Loaded ${mappedSongs.length} songs from Supabase`)
           console.log('Song source used: Supabase (production database)')
