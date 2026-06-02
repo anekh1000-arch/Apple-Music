@@ -266,40 +266,12 @@ function App() {
     '/covers/cover-07.jpg',
     '/covers/cover-08.jpg',
     '/covers/cover-09.jpg',
-    '/covers/cover-10.jpg',
-    '/covers/cover-11.jpg',
-    '/covers/cover-12.jpg',
-    '/covers/cover-13.jpg',
-    '/covers/cover-14.jpg',
-    '/covers/cover-15.jpg',
-    '/covers/cover-16.jpg',
-    '/covers/cover-17.jpg',
-    '/covers/cover-18.jpg',
-    '/covers/cover-19.jpg',
-    '/covers/cover-20.jpg',
-    '/covers/cover-21.jpg',
-    '/covers/cover-22.jpg',
-    '/covers/cover-23.jpg',
-    '/covers/cover-24.jpg',
-    '/covers/cover-25.jpg',
-    '/covers/cover-26.jpg',
-    '/covers/cover-27.jpg',
-    '/covers/cover-28.jpg',
-    '/covers/cover-29.jpg',
-    '/covers/cover-30.jpg',
-    '/covers/cover-31.jpg'
+    '/covers/cover-10.jpg'
   ]
 
-  // Stable hash function for consistent cover assignment
+  // Simple index-based cover assignment for consistent repeating pattern
   const getCoverIndex = (song, index) => {
-    const hash = song.id || song.title || index
-    const hashString = String(hash)
-    let hashValue = 0
-    for (let i = 0; i < hashString.length; i++) {
-      hashValue = ((hashValue << 5) - hashValue) + hashString.charCodeAt(i)
-      hashValue = hashValue & hashValue
-    }
-    return Math.abs(hashValue) % COVER_ARTS.length
+    return index % COVER_ARTS.length
   }
 
   // Clear local cache on app load to ensure fresh data
