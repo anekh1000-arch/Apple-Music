@@ -120,10 +120,21 @@ function Sidebar({ view, setView, playlist, removeFromPlaylist, currentTheme, is
       </aside>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 backdrop-blur-xl z-30" style={{ height: '64px', minHeight: '64px', paddingTop: '6px', paddingBottom: 'calc(6px + env(safe-area-inset-bottom))', backgroundColor: isLightMode ? 'rgba(255, 255, 255, 0.95)' : 'rgba(5, 5, 5, 0.95)', borderTop: isLightMode ? '1px solid rgba(0, 0, 0, 0.06)' : '1px solid rgba(255, 255, 255, 0.06)' }}>
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30" style={{ 
+        height: '64px', 
+        minHeight: '64px', 
+        paddingTop: '6px', 
+        paddingBottom: 'calc(6px + env(safe-area-inset-bottom))', 
+        backgroundColor: isLightMode ? 'rgba(255, 255, 255, 0.78)' : 'rgba(8, 8, 10, 0.78)', 
+        backdropFilter: 'blur(22px)', 
+        WebkitBackdropFilter: 'blur(22px)',
+        borderTop: isLightMode ? '1px solid rgba(0, 0, 0, 0.08)' : '1px solid rgba(255, 255, 255, 0.08)',
+        boxShadow: isLightMode ? '0 -12px 35px rgba(0, 0, 0, 0.08)' : '0 -12px 35px rgba(0, 0, 0, 0.35)'
+      }}>
         <div className="flex justify-around items-center" style={{ height: '100%' }}>
           {mobileMenuItems.map((item) => {
             const Icon = item.icon
+            const isActive = view === item.id
             return (
               <button
                 key={item.id}
@@ -131,20 +142,45 @@ function Sidebar({ view, setView, playlist, removeFromPlaylist, currentTheme, is
                   setView(item.id)
                   hapticSelection()
                 }}
-                className="flex flex-col items-center justify-center px-0 py-0"
+                className="flex flex-col items-center justify-center px-0 py-0 relative"
                 style={{
                   flex: 1,
                   height: '100%',
                   minHeight: '44px',
                   gap: '2px',
-                  color: view === item.id ? (isLightMode ? '#111111' : '#FFFFFF') : (isLightMode ? '#6E6E73' : '#8A8A93'),
+                  color: isActive ? (isLightMode ? '#111111' : '#FFFFFF') : (isLightMode ? '#6E6E73' : '#8A8A93'),
                   backgroundColor: 'transparent',
                   padding: 0,
-                  margin: 0
+                  margin: 0,
+                  transform: isActive ? 'translateY(-2px)' : 'translateY(0)',
+                  transition: 'all 0.18s ease'
+                }}
+                onMouseDown={(e) => {
+                  e.currentTarget.style.transform = 'scale(0.96)'
+                }}
+                onMouseUp={(e) => {
+                  e.currentTarget.style.transform = isActive ? 'translateY(-2px)' : 'translateY(0)'
+                }}
+                onTouchStart={(e) => {
+                  e.currentTarget.style.transform = 'scale(0.96)'
+                }}
+                onTouchEnd={(e) => {
+                  e.currentTarget.style.transform = isActive ? 'translateY(-2px)' : 'translateY(0)'
                 }}
               >
-                <Icon size={23} style={{ width: '23px', height: '23px', minWidth: '23px', minHeight: '23px', display: 'block', color: view === item.id ? (isLightMode ? '#111111' : '#FFFFFF') : (isLightMode ? '#6E6E73' : '#8A8A93') }} />
-                <span className="font-medium" style={{ fontSize: '11px', fontWeight: 500, lineHeight: 1, marginTop: '0', color: view === item.id ? (isLightMode ? '#111111' : '#FFFFFF') : (isLightMode ? '#6E6E73' : '#8A8A93') }}>{item.label}</span>
+                {isActive && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '-2px',
+                    width: '18px',
+                    height: '3px',
+                    borderRadius: '999px',
+                    backgroundColor: isLightMode ? '#111111' : '#FFFFFF',
+                    transition: 'all 0.18s ease'
+                  }} />
+                )}
+                <Icon size={23} style={{ width: '23px', height: '23px', minWidth: '23px', minHeight: '23px', display: 'block', color: isActive ? (isLightMode ? '#111111' : '#FFFFFF') : (isLightMode ? '#6E6E73' : '#8A8A93') }} />
+                <span className="font-medium" style={{ fontSize: '11px', fontWeight: 500, lineHeight: 1, marginTop: '0', color: isActive ? (isLightMode ? '#111111' : '#FFFFFF') : (isLightMode ? '#6E6E73' : '#8A8A93') }}>{item.label}</span>
               </button>
             )
           })}
