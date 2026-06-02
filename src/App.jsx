@@ -75,6 +75,9 @@ const getMidnightBlackContrast = () => {
 
 function App() {
   const audioRef = useRef(null)
+  const fadeAnimationRef = useRef(null)
+  const manualAudioControlRef = useRef(null)
+  const preFadeVolumeRef = useRef(null)
   const [songsData, setSongsData] = useState(songs)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -206,16 +209,64 @@ function App() {
     localStorage.setItem('appearance', appearance)
   }
 
+  const clampVolume = (value) => Math.max(0, Math.min(1, Number.isFinite(value) ? value : 1))
+  const FADE_DURATION = 350
+
+  const cancelFade = useCallback((restoreVolume = false) => {
+    if (fadeAnimationRef.current) {
+      cancelAnimationFrame(fadeAnimationRef.current)
+      fadeAnimationRef.current = null
+    }
+
+    if (restoreVolume && audioRef.current && preFadeVolumeRef.current !== null) {
+      audioRef.current.volume = preFadeVolumeRef.current
+    }
+
+    preFadeVolumeRef.current = null
+  }, [])
+
+  const fadeVolume = useCallback((audio, from, to, duration, onComplete, restoreVolume = to) => {
+    cancelFade()
+
+    const start = performance.now()
+    const targetVolume = clampVolume(to)
+    preFadeVolumeRef.current = clampVolume(restoreVolume)
+
+    function step(now) {
+      const progress = Math.min((now - start) / duration, 1)
+      const nextVolume = from + (targetVolume - from) * progress
+
+      audio.volume = clampVolume(nextVolume)
+
+      if (progress < 1) {
+        fadeAnimationRef.current = requestAnimationFrame(step)
+      } else {
+        fadeAnimationRef.current = null
+        preFadeVolumeRef.current = null
+        if (onComplete) onComplete()
+      }
+    }
+
+    fadeAnimationRef.current = requestAnimationFrame(step)
+  }, [cancelFade])
+
   // Audio control
   useEffect(() => {
     if (audioRef.current) {
+      if (manualAudioControlRef.current) {
+        manualAudioControlRef.current = null
+        return
+      }
+
+      cancelFade(true)
+
       if (isPlaying) {
         audioRef.current.play()
       } else {
         audioRef.current.pause()
       }
     }
-  }, [isPlaying, currentSong])
+  }, [isPlaying, currentSong, cancelFade])
 
   const handleSeek = (e) => {
     if (audioRef.current) {
@@ -414,11 +465,32 @@ function App() {
   }
 
   const handlePlay = (song) => {
+    const audio = audioRef.current
+    const isSameSong = currentSong && song && (currentSong.id || currentSong.title) === (song.id || song.title)
+    const shouldFadeIn = audio && isSameSong && !isPlaying
+
+    cancelFade(true)
+
     setCurrentSong(song)
     setIsPlaying(true)
     setProgress(0)
     setCurrentTime(0)
     setDuration(0)
+
+    if (shouldFadeIn) {
+      const savedVolume = clampVolume(audio.volume)
+
+      manualAudioControlRef.current = 'play'
+      audio.volume = 0
+      audio.play()
+        .then(() => {
+          fadeVolume(audio, 0, savedVolume, FADE_DURATION)
+        })
+        .catch((err) => {
+          console.error('Audio play failed:', err)
+          audio.volume = savedVolume
+        })
+    }
 
     // Extract dominant color from album artwork
     if (song.cover) {
@@ -467,7 +539,20 @@ function App() {
   }
 
   const handlePause = () => {
+    const audio = audioRef.current
+
+    cancelFade(true)
     setIsPlaying(false)
+
+    if (audio) {
+      const savedVolume = clampVolume(audio.volume)
+      manualAudioControlRef.current = 'pause'
+
+      fadeVolume(audio, audio.volume, 0, FADE_DURATION, () => {
+        audio.pause()
+        audio.volume = savedVolume
+      }, savedVolume)
+    }
     
     // Update playback state
     if ('mediaSession' in navigator) {
@@ -476,6 +561,8 @@ function App() {
   }
 
   const handleNext = () => {
+    cancelFade(true)
+
     // Play from queue if not empty
     if (queue.length > 0) {
       const nextQueueSong = queue[0]
@@ -493,6 +580,8 @@ function App() {
   }
 
   const handlePrevious = () => {
+    cancelFade(true)
+
     const currentIndex = songsData.findIndex(s => s.id === currentSong?.id)
     const prevIndex = currentIndex === 0 ? songsData.length - 1 : currentIndex - 1
     setCurrentSong(songsData[prevIndex])
@@ -526,6 +615,8 @@ function App() {
   }
 
   const playFromQueue = (song) => {
+    cancelFade(true)
+
     setCurrentSong(song)
     const updatedQueue = queue.filter(s => s.id !== song.id)
     setQueue(updatedQueue)
