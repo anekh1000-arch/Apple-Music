@@ -172,7 +172,7 @@ function App() {
   }
 
   const handleTimeUpdate = () => {
-    if (audioRef.current) {
+    if (audioRef.current && currentSong) {
       const progressPercent = (audioRef.current.currentTime / audioRef.current.duration) * 100
       setProgress(progressPercent)
       setCurrentTime(audioRef.current.currentTime)
@@ -461,7 +461,9 @@ function App() {
     setCurrentSong(song)
     setIsPlaying(true)
     setProgress(0)
-    
+    setCurrentTime(0)
+    setDuration(0)
+
     // Extract dominant color from album artwork
     if (song.cover) {
       extractDominantColor(song.cover).then(color => {
@@ -470,15 +472,15 @@ function App() {
         console.error('Failed to extract color:', err)
       })
     }
-    
+
     // Update Media Session API
     updateMediaSession(song)
-    
+
     // Update playback state
     if ('mediaSession' in navigator) {
       navigator.mediaSession.playbackState = 'playing'
     }
-    
+
     // Update listening stats
     setListeningStats(prev => {
       const updated = {
@@ -496,7 +498,7 @@ function App() {
       localStorage.setItem('listeningStats', JSON.stringify(updated))
       return updated
     })
-    
+
     // Add to recently played
     setRecentlyPlayed(prev => {
       // Remove if already exists (to move to top)
@@ -524,12 +526,14 @@ function App() {
       playFromQueue(nextQueueSong)
       return
     }
-    
+
     // Otherwise play next song from library
     const currentIndex = songsData.findIndex(s => s.id === currentSong?.id)
     const nextIndex = (currentIndex + 1) % songsData.length
     setCurrentSong(songsData[nextIndex])
     setProgress(0)
+    setCurrentTime(0)
+    setDuration(0)
   }
 
   const handlePrevious = () => {
@@ -537,6 +541,8 @@ function App() {
     const prevIndex = currentIndex === 0 ? songsData.length - 1 : currentIndex - 1
     setCurrentSong(songsData[prevIndex])
     setProgress(0)
+    setCurrentTime(0)
+    setDuration(0)
   }
 
   const addToPlaylist = (song) => {
@@ -564,6 +570,8 @@ function App() {
     setQueue(queue.filter(s => s.id !== song.id))
     setIsPlaying(true)
     setProgress(0)
+    setCurrentTime(0)
+    setDuration(0)
   }
 
   // Save playback session to localStorage
@@ -828,6 +836,13 @@ function App() {
         ref={audioRef}
         src={currentSong?.audioUrl}
         onTimeUpdate={handleTimeUpdate}
+        onLoadedMetadata={() => {
+          if (audioRef.current) {
+            setDuration(audioRef.current.duration || 0)
+            setCurrentTime(0)
+            setProgress(0)
+          }
+        }}
         onEnded={handleNext}
       />
       <Player
