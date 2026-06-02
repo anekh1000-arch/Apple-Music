@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Play, Pause, SkipBack, SkipForward, AlertCircle, ChevronDown } from 'lucide-react'
 import { hapticLight, hapticMedium, hapticSelection } from '../lib/haptics'
-import { getCoverForSong } from '../utils/covers'
+import { getCoverForSong, getPlayerCoverForSong } from '../utils/covers'
 
 function FullscreenPlayer({ currentSong, isPlaying, progress, setProgress, onPlay, onPause, onNext, onPrevious, onClose, currentTheme, currentTime, duration, onSeek, isLightMode, dominantColor, themeName, isMidnightBlackTheme, getMidnightBlackContrast, songs }) {
   const [imageError, setImageError] = useState(false)
@@ -137,16 +137,22 @@ function FullscreenPlayer({ currentSong, isPlaying, progress, setProgress, onPla
       >
       {/* Background with blur */}
       <div className="absolute inset-0 z-0">
-        {imageError ? (
-          <div className="w-full h-full" style={{ backgroundColor: currentTheme.surfaceLight }} />
-        ) : (
-          <img
-            src={getCoverForSong(currentSong, songs?.findIndex(s => s.id === currentSong.id) || 0)}
-            alt=""
-            className="w-full h-full object-cover opacity-40 blur-3xl scale-125"
-            onError={() => setImageError(true)}
-          />
-        )}
+        {(() => {
+          const currentSongIndex = songs?.findIndex(s => s.id === currentSong.id || s.title === currentSong.title) ?? 0;
+          const safeIndex = currentSongIndex >= 0 ? currentSongIndex : 0;
+          const playerCoverSrc = getPlayerCoverForSong(currentSong, safeIndex);
+          
+          return imageError ? (
+            <div className="w-full h-full" style={{ backgroundColor: currentTheme.surfaceLight }} />
+          ) : (
+            <img
+              src={playerCoverSrc}
+              alt=""
+              className="w-full h-full object-cover opacity-40 blur-3xl scale-125"
+              onError={() => setImageError(true)}
+            />
+          );
+        })()}
         <div className="absolute inset-0 bg-gradient-to-b" style={{
           background: isLightMode 
             ? 'linear-gradient(to bottom, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.15))'
@@ -172,27 +178,33 @@ function FullscreenPlayer({ currentSong, isPlaying, progress, setProgress, onPla
 
         {/* Album Art */}
         <div className="mb-6">
-          {imageError ? (
-            <div className="w-64 h-64 md:w-72 md:h-72 rounded-3xl flex items-center justify-center shadow-2xl transition-all duration-300" style={{ backgroundColor: currentTheme.surfaceLight, opacity: isTransitioning ? 0.5 : 1, transform: isTransitioning ? 'scale(0.95)' : 'scale(1)' }}>
-              <span className="text-lg" style={{ color: currentTheme.textMuted }}>No Cover</span>
-            </div>
-          ) : (
-            <img
-              src={getCoverForSong(currentSong, songs?.findIndex(s => s.id === currentSong.id) || 0)}
-              alt={currentSong.title}
-              className="w-64 h-64 md:w-72 md:h-72 rounded-3xl shadow-2xl transition-all duration-300 hover:scale-105"
-              style={{ 
-                objectFit: 'cover',
-                objectPosition: 'center',
-                aspectRatio: '1 / 1',
-                display: 'block',
-                boxShadow: isLightMode ? '0 20px 40px -12px rgba(0, 0, 0, 0.2)' : '0 20px 40px -12px rgba(0, 0, 0, 0.5)', 
-                opacity: isTransitioning ? 0.5 : 1, 
-                transform: isTransitioning ? 'scale(0.95)' : 'scale(1)' 
-              }}
-              onError={() => setImageError(true)}
-            />
-          )}
+          {(() => {
+            const currentSongIndex = songs?.findIndex(s => s.id === currentSong.id || s.title === currentSong.title) ?? 0;
+            const safeIndex = currentSongIndex >= 0 ? currentSongIndex : 0;
+            const playerCoverSrc = getPlayerCoverForSong(currentSong, safeIndex);
+            
+            return imageError ? (
+              <div className="w-64 h-64 md:w-72 md:h-72 rounded-3xl flex items-center justify-center shadow-2xl transition-all duration-300" style={{ backgroundColor: currentTheme.surfaceLight, opacity: isTransitioning ? 0.5 : 1, transform: isTransitioning ? 'scale(0.95)' : 'scale(1)' }}>
+                <span className="text-lg" style={{ color: currentTheme.textMuted }}>No Cover</span>
+              </div>
+            ) : (
+              <img
+                src={playerCoverSrc}
+                alt={currentSong.title}
+                className="w-64 h-64 md:w-72 md:h-72 rounded-3xl shadow-2xl transition-all duration-300 hover:scale-105"
+                style={{ 
+                  objectFit: 'cover',
+                  objectPosition: 'center',
+                  aspectRatio: '1 / 1',
+                  display: 'block',
+                  boxShadow: isLightMode ? '0 20px 40px -12px rgba(0, 0, 0, 0.2)' : '0 20px 40px -12px rgba(0, 0, 0, 0.5)', 
+                  opacity: isTransitioning ? 0.5 : 1, 
+                  transform: isTransitioning ? 'scale(0.95)' : 'scale(1)' 
+                }}
+                onError={() => setImageError(true)}
+              />
+            );
+          })()}
         </div>
 
         {/* Song Info */}
