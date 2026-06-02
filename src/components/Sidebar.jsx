@@ -31,6 +31,8 @@ function Sidebar({ view, setView, playlist, removeFromPlaylist, currentTheme, is
     { id: 'favorites', icon: Heart, label: 'Favorites' },
     { id: 'settings', icon: Settings, label: 'Settings' },
   ]
+  const activeMobileIndex = Math.max(0, mobileMenuItems.findIndex(item => item.id === view))
+  const mobileNavTransition = 'all 0.22s cubic-bezier(0.22, 1, 0.36, 1)'
 
   return (
     <>
@@ -125,13 +127,26 @@ function Sidebar({ view, setView, playlist, removeFromPlaylist, currentTheme, is
         minHeight: '64px', 
         paddingTop: '6px', 
         paddingBottom: 'calc(6px + env(safe-area-inset-bottom))', 
-        backgroundColor: isLightMode ? 'rgba(255, 255, 255, 0.78)' : 'rgba(8, 8, 10, 0.78)', 
-        backdropFilter: 'blur(22px)', 
-        WebkitBackdropFilter: 'blur(22px)',
-        borderTop: isLightMode ? '1px solid rgba(0, 0, 0, 0.08)' : '1px solid rgba(255, 255, 255, 0.08)',
-        boxShadow: isLightMode ? '0 -12px 35px rgba(0, 0, 0, 0.08)' : '0 -12px 35px rgba(0, 0, 0, 0.35)'
+        backgroundColor: isLightMode ? 'rgba(255, 255, 255, 0.82)' : 'rgba(8, 8, 10, 0.82)', 
+        backdropFilter: 'blur(20px)', 
+        WebkitBackdropFilter: 'blur(20px)',
+        borderTop: isLightMode ? '1px solid rgba(0, 0, 0, 0.08)' : '1px solid rgba(255, 255, 255, 0.08)'
       }}>
-        <div className="flex justify-around items-center" style={{ height: '100%' }}>
+        <div className="relative flex justify-around items-center px-2" style={{ height: '100%' }}>
+          <div
+            style={{
+              position: 'absolute',
+              top: '4px',
+              bottom: '4px',
+              left: '8px',
+              width: `calc((100% - 16px) / ${mobileMenuItems.length})`,
+              borderRadius: '18px',
+              background: isLightMode ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.10)',
+              transform: `translateX(${activeMobileIndex * 100}%)`,
+              transition: mobileNavTransition,
+              pointerEvents: 'none'
+            }}
+          />
           {mobileMenuItems.map((item) => {
             const Icon = item.icon
             const isActive = view === item.id
@@ -152,35 +167,14 @@ function Sidebar({ view, setView, playlist, removeFromPlaylist, currentTheme, is
                   backgroundColor: 'transparent',
                   padding: 0,
                   margin: 0,
-                  transform: isActive ? 'translateY(-2px)' : 'translateY(0)',
-                  transition: 'all 0.18s ease'
-                }}
-                onMouseDown={(e) => {
-                  e.currentTarget.style.transform = 'scale(0.96)'
-                }}
-                onMouseUp={(e) => {
-                  e.currentTarget.style.transform = isActive ? 'translateY(-2px)' : 'translateY(0)'
-                }}
-                onTouchStart={(e) => {
-                  e.currentTarget.style.transform = 'scale(0.96)'
-                }}
-                onTouchEnd={(e) => {
-                  e.currentTarget.style.transform = isActive ? 'translateY(-2px)' : 'translateY(0)'
+                  opacity: isActive ? 1 : 0.6,
+                  fontWeight: isActive ? 650 : 500,
+                  transition: mobileNavTransition,
+                  zIndex: 1
                 }}
               >
-                {isActive && (
-                  <div style={{
-                    position: 'absolute',
-                    top: '-2px',
-                    width: '18px',
-                    height: '3px',
-                    borderRadius: '999px',
-                    backgroundColor: isLightMode ? '#111111' : '#FFFFFF',
-                    transition: 'all 0.18s ease'
-                  }} />
-                )}
-                <Icon size={23} style={{ width: '23px', height: '23px', minWidth: '23px', minHeight: '23px', display: 'block', color: isActive ? (isLightMode ? '#111111' : '#FFFFFF') : (isLightMode ? '#6E6E73' : '#8A8A93') }} />
-                <span className="font-medium" style={{ fontSize: '11px', fontWeight: 500, lineHeight: 1, marginTop: '0', color: isActive ? (isLightMode ? '#111111' : '#FFFFFF') : (isLightMode ? '#6E6E73' : '#8A8A93') }}>{item.label}</span>
+                <Icon size={23} style={{ width: '23px', height: '23px', minWidth: '23px', minHeight: '23px', display: 'block', color: isActive ? (isLightMode ? '#111111' : '#FFFFFF') : (isLightMode ? '#6E6E73' : '#8A8A93'), transition: mobileNavTransition }} />
+                <span className="font-medium" style={{ fontSize: '11px', fontWeight: isActive ? 650 : 500, lineHeight: 1, marginTop: '0', color: isActive ? (isLightMode ? '#111111' : '#FFFFFF') : (isLightMode ? '#6E6E73' : '#8A8A93'), transition: mobileNavTransition }}>{item.label}</span>
               </button>
             )
           })}
