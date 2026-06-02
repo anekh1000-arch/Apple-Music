@@ -180,8 +180,16 @@ function FullscreenPlayer({ currentSong, isPlaying, progress, setProgress, onPla
             <img
               src={getCoverForSong(currentSong, songs?.findIndex(s => s.id === currentSong.id) || 0)}
               alt={currentSong.title}
-              className="w-64 h-64 md:w-72 md:h-72 rounded-3xl object-cover shadow-2xl transition-all duration-300 hover:scale-105"
-              style={{ boxShadow: isLightMode ? '0 20px 40px -12px rgba(0, 0, 0, 0.2)' : '0 20px 40px -12px rgba(0, 0, 0, 0.5)', opacity: isTransitioning ? 0.5 : 1, transform: isTransitioning ? 'scale(0.95)' : 'scale(1)' }}
+              className="w-64 h-64 md:w-72 md:h-72 rounded-3xl shadow-2xl transition-all duration-300 hover:scale-105"
+              style={{ 
+                objectFit: 'cover',
+                objectPosition: 'center',
+                aspectRatio: '1 / 1',
+                display: 'block',
+                boxShadow: isLightMode ? '0 20px 40px -12px rgba(0, 0, 0, 0.2)' : '0 20px 40px -12px rgba(0, 0, 0, 0.5)', 
+                opacity: isTransitioning ? 0.5 : 1, 
+                transform: isTransitioning ? 'scale(0.95)' : 'scale(1)' 
+              }}
               onError={() => setImageError(true)}
             />
           )}
