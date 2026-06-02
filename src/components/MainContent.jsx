@@ -3,6 +3,7 @@ import { Play, Plus, Clock, ListPlus, Heart } from 'lucide-react'
 import { hapticLight, hapticMedium, hapticSuccess, hapticSelection } from '../lib/haptics'
 import { getDailyPick, getDailyRecommendations } from '../lib/dailyPick'
 import { getCoverForSong } from '../utils/covers'
+import Skeleton from './ui/Skeleton'
 
 function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, addToPlaylist, playlist, queue, addToQueue, removeFromQueue, playFromQueue, recentlyPlayed, songs, loading, error, onOpenFullscreen, listeningStats, favoriteArtist, favoriteAlbum, theme, currentTheme, onThemeChange, themes, slideDirection, isAnimating, isLightMode, onAppearanceChange, hapticFeedbackEnabled, setHapticFeedbackEnabled, favoriteSongs, toggleFavorite, sleepTimer, setSleepTimer }) {
   const filteredSongs = useMemo(() => songs.filter(song =>
@@ -22,6 +23,15 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
   const [crossfadeDuration, setCrossfadeDuration] = useState(4)
   const [autoplayEnabled, setAutoplayEnabled] = useState(false)
   const [rememberLastPlayed, setRememberLastPlayed] = useState(false)
+  const [isPageLoading, setIsPageLoading] = useState(true)
+
+  // Page loading effect
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsPageLoading(false)
+    }, 450)
+    return () => clearTimeout(timer)
+  }, [])
 
   // Load playback settings from localStorage
   useEffect(() => {
@@ -210,19 +220,151 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
   }
 
   const collectionStats = getCollectionStats()
+  const showInitialSkeleton = loading || isPageLoading
+
+  const renderFeaturedAlbumSkeleton = () => (
+    <div className="mb-8">
+      <div
+        style={{
+          background: isLightMode
+            ? 'rgba(245, 245, 247, 0.75)'
+            : 'linear-gradient(135deg, #1B1B2F 0%, #252545 45%, #141421 100%)',
+          borderColor: isLightMode ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.08)',
+          boxShadow: isLightMode ? '0 18px 45px rgba(0, 0, 0, 0.06)' : '0 20px 50px rgba(0, 0, 0, 0.35)'
+        }}
+        className="relative backdrop-blur-xl rounded-3xl overflow-hidden border"
+      >
+        <div className="md:hidden flex flex-col p-5">
+          <Skeleton className="w-28 h-3 mb-3 rounded-full" />
+          <div className="flex items-center gap-4">
+            <Skeleton className="w-28 h-28 flex-shrink-0 rounded-2xl" />
+            <div className="flex-1 min-w-0">
+              <Skeleton className="h-6 w-4/5 mb-2 rounded-full" />
+              <Skeleton className="h-4 w-2/3 mb-4 rounded-full" />
+              <Skeleton className="h-9 w-24 rounded-full" />
+            </div>
+          </div>
+        </div>
+
+        <div className="hidden md:flex items-center gap-6 p-6">
+          <Skeleton className="w-32 h-32 flex-shrink-0 rounded-xl" />
+          <div className="flex-1">
+            <Skeleton className="h-3 w-28 mb-3 rounded-full" />
+            <Skeleton className="h-7 w-2/5 mb-3 rounded-full" />
+            <Skeleton className="h-5 w-1/4 mb-3 rounded-full" />
+            <Skeleton className="h-4 w-1/3 rounded-full" />
+          </div>
+          <Skeleton className="w-14 h-14 flex-shrink-0 rounded-full" />
+        </div>
+      </div>
+    </div>
+  )
+
+  const renderHorizontalCardSkeletons = (count) => (
+    <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 pr-4 md:mx-0 md:px-0 md:pr-0">
+      {Array.from({ length: count }).map((_, index) => (
+        <div key={index} className="flex-shrink-0 w-36 md:w-40">
+          <Skeleton className="w-full aspect-square rounded-2xl mb-3" />
+          <Skeleton className="h-4 w-4/5 mb-2 rounded-full" />
+          <Skeleton className="h-3 w-3/5 rounded-full" />
+        </div>
+      ))}
+    </div>
+  )
+
+  const renderSongRowSkeletons = (count) => (
+    <div className="backdrop-blur-xl rounded-xl overflow-hidden border w-full" style={{ backgroundColor: `${currentTheme.surfaceLight}99`, borderColor: currentTheme.border }}>
+      <div className="md:hidden">
+        {Array.from({ length: count }).map((_, index) => (
+          <div key={index} className="flex items-center gap-3 p-3 border-b last:border-b-0" style={{ borderColor: currentTheme.border }}>
+            <Skeleton className="w-12 h-12 flex-shrink-0 rounded" />
+            <div className="flex-1 min-w-0">
+              <Skeleton className="h-4 w-3/4 mb-2 rounded-full" />
+              <Skeleton className="h-3 w-1/2 rounded-full" />
+            </div>
+            <div className="flex items-center gap-2">
+              <Skeleton className="w-8 h-8 rounded-full" />
+              <Skeleton className="w-8 h-8 rounded-full" />
+              <Skeleton className="w-8 h-8 rounded-full" />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <table className="hidden md:table w-full">
+        <thead>
+          <tr className="text-left text-xs uppercase font-semibold tracking-wider" style={{ color: currentTheme.textMuted, borderColor: currentTheme.border }}>
+            <th className="px-3 py-2">#</th>
+            <th className="px-3 py-2">Title</th>
+            <th className="px-3 py-2 hidden lg:table-cell">Time</th>
+            <th className="px-3 py-2"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {Array.from({ length: count }).map((_, index) => (
+            <tr key={index}>
+              <td className="px-3 py-2">
+                <Skeleton className="w-3 h-3 rounded-full" />
+              </td>
+              <td className="px-3 py-2">
+                <div className="flex items-center gap-2">
+                  <Skeleton className="w-8 h-8 flex-shrink-0 rounded" />
+                  <div className="min-w-0 w-full">
+                    <Skeleton className="h-4 w-1/3 mb-2 rounded-full" />
+                    <Skeleton className="h-3 w-1/5 rounded-full" />
+                  </div>
+                </div>
+              </td>
+              <td className="px-3 py-2 hidden lg:table-cell">
+                <Skeleton className="h-3 w-10 rounded-full" />
+              </td>
+              <td className="px-3 py-2">
+                <div className="flex items-center gap-1 justify-end">
+                  <Skeleton className="w-6 h-6 rounded" />
+                  <Skeleton className="w-6 h-6 rounded" />
+                  <Skeleton className="w-6 h-6 rounded" />
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+
+  const renderHomeSkeleton = () => (
+    <div className="w-full md:px-0 px-4" style={{ backgroundColor: isLightMode ? '#FFFFFF' : 'transparent', minHeight: '100vh', paddingBottom: '180px' }}>
+      <div className="md:hidden mb-6 pt-4">
+        <h1 className="text-2xl font-bold mb-1" style={{ color: isLightMode ? '#111111' : '#FFFFFF' }}>
+          {getGreeting()}
+        </h1>
+        <p className="text-sm font-medium" style={{ color: isLightMode ? '#6E6E73' : '#A1A1AA' }}>Welcome back, Anekh</p>
+      </div>
+
+      <div className="hidden md:block mb-6">
+        <h1 className="text-2xl md:text-3xl font-bold mb-1" style={{ color: currentTheme.text }}>
+          {getGreeting()}
+        </h1>
+        <p style={{ color: currentTheme.textMuted }} className="mb-6 text-sm">Listen to your music</p>
+      </div>
+
+      {renderFeaturedAlbumSkeleton()}
+
+      <div className="mb-8">
+        <h2 className="text-lg font-semibold mb-4" style={{ color: isLightMode ? '#111111' : '#FFFFFF' }}>Daily Mix</h2>
+        {renderHorizontalCardSkeletons(3)}
+      </div>
+
+      <div className="mb-8">
+        <h2 className="text-lg font-semibold mb-4" style={{ color: isLightMode ? '#111111' : '#FFFFFF' }}>Recently Added</h2>
+        {renderHorizontalCardSkeletons(5)}
+      </div>
+    </div>
+  )
 
   const renderContent = () => {
-    // Show loading state
-    if (loading) {
-      return (
-        <div className="w-full text-center py-20" style={{ color: currentTheme.textMuted }}>
-          <p className="text-sm">Loading songs...</p>
-        </div>
-      )
-    }
-
     // Show error state (but still allow using fallback data)
-    if (error) {
+    if (error && !loading) {
       return (
         <div className="rounded-lg p-4 w-full mb-6" style={{ backgroundColor: currentTheme.surfaceLight }}>
           <p className="text-sm mb-2" style={{ color: '#f59e0b' }}>{error}</p>
@@ -233,6 +375,10 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
 
     switch (view) {
       case 'home':
+        if (showInitialSkeleton) {
+          return renderHomeSkeleton()
+        }
+
         return (
           <div className="w-full md:px-0 px-4" style={{ backgroundColor: isLightMode ? '#FFFFFF' : 'transparent', minHeight: '100vh', paddingBottom: '180px' }}>
             {/* Mobile Header */}
@@ -533,7 +679,11 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
             />
             {searchQuery ? (
               <div className="mt-6">
-                <SongList songs={filteredSongs} onPlay={onPlay} currentSong={currentSong} addToPlaylist={addToPlaylist} playlist={playlist} addToQueue={addToQueue} queue={queue} imageErrors={imageErrors} handleImageError={handleImageError} currentTheme={currentTheme} isLightMode={isLightMode} favoriteSongs={favoriteSongs} toggleFavorite={toggleFavorite} />
+                {showInitialSkeleton ? (
+                  renderSongRowSkeletons(8)
+                ) : (
+                  <SongList songs={filteredSongs} onPlay={onPlay} currentSong={currentSong} addToPlaylist={addToPlaylist} playlist={playlist} addToQueue={addToQueue} queue={queue} imageErrors={imageErrors} handleImageError={handleImageError} currentTheme={currentTheme} isLightMode={isLightMode} favoriteSongs={favoriteSongs} toggleFavorite={toggleFavorite} />
+                )}
               </div>
             ) : (
               <div className="text-center py-20" style={{ color: currentTheme.textMuted }}>
@@ -547,7 +697,11 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
           <div className="w-full">
             <h2 className="text-2xl font-semibold mb-2" style={{ color: currentTheme.text }}>Your Library</h2>
             <p className="mb-6 text-sm" style={{ color: currentTheme.textMuted }}>Your personal music collection</p>
-            <SongList songs={songs} onPlay={onPlay} currentSong={currentSong} addToPlaylist={addToPlaylist} playlist={playlist} addToQueue={addToQueue} queue={queue} imageErrors={imageErrors} handleImageError={handleImageError} currentTheme={currentTheme} isLightMode={isLightMode} favoriteSongs={favoriteSongs} toggleFavorite={toggleFavorite} />
+            {showInitialSkeleton ? (
+              renderSongRowSkeletons(8)
+            ) : (
+              <SongList songs={songs} onPlay={onPlay} currentSong={currentSong} addToPlaylist={addToPlaylist} playlist={playlist} addToQueue={addToQueue} queue={queue} imageErrors={imageErrors} handleImageError={handleImageError} currentTheme={currentTheme} isLightMode={isLightMode} favoriteSongs={favoriteSongs} toggleFavorite={toggleFavorite} />
+            )}
           </div>
         )
       case 'queue':
@@ -570,7 +724,9 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
           <div className="w-full">
             <h2 className="text-2xl font-semibold mb-2" style={{ color: currentTheme.text }}>Favorites</h2>
             <p className="mb-6 text-sm" style={{ color: currentTheme.textMuted }}>Your favorite tracks</p>
-            {favoriteSongsList.length > 0 ? (
+            {showInitialSkeleton ? (
+              renderSongRowSkeletons(8)
+            ) : favoriteSongsList.length > 0 ? (
               <SongList songs={favoriteSongsList} onPlay={onPlay} currentSong={currentSong} addToPlaylist={addToPlaylist} playlist={playlist} addToQueue={addToQueue} queue={queue} imageErrors={imageErrors} handleImageError={handleImageError} currentTheme={currentTheme} isLightMode={isLightMode} favoriteSongs={favoriteSongs} toggleFavorite={toggleFavorite} />
             ) : (
               <div className="text-center py-20" style={{ color: currentTheme.textMuted }}>
@@ -947,7 +1103,7 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
 
   return (
     <main 
-      className="flex-1 w-full min-w-0 overflow-y-auto p-6 pb-28 md:pb-28" 
+      className={`flex-1 w-full min-w-0 overflow-y-auto p-6 pb-28 md:pb-28 ${isLightMode ? '' : 'dark'}`}
       style={{ 
         backgroundColor: currentTheme.bg,
         paddingBottom: 'calc(7rem + env(safe-area-inset-bottom))',
