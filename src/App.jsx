@@ -3,7 +3,6 @@ import Sidebar from './components/Sidebar'
 import MainContent from './components/MainContent'
 import Player from './components/Player'
 import FullscreenPlayer from './components/FullscreenPlayer'
-import SplashScreen from './components/SplashScreen'
 import { songs } from './data/songs'
 import { supabase, isSupabaseConfigured } from './lib/supabase'
 import { extractDominantColor } from './lib/extractColor'
@@ -92,13 +91,6 @@ function App() {
   })
   const [recentlyPlayed, setRecentlyPlayed] = useState([])
   const [showFullscreenPlayer, setShowFullscreenPlayer] = useState(false)
-  const [showSplash, setShowSplash] = useState(() => {
-    // Check if splash was already seen in this session
-    const splashSeen = sessionStorage.getItem('vocaleSplashSeen')
-    // Also check for reduced motion preference
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    return !splashSeen && !prefersReducedMotion
-  })
   const [slideDirection, setSlideDirection] = useState(null)
   const [isAnimating, setIsAnimating] = useState(false)
   const [dominantColor, setDominantColor] = useState('#000000')
@@ -847,16 +839,6 @@ function App() {
           background-color: ${isLightMode ? '#ffffff' : '#000000'};
         }
       `}</style>
-      {/* Splash Screen */}
-      {showSplash && (
-        <SplashScreen 
-          onComplete={() => {
-            setShowSplash(false)
-            sessionStorage.setItem('vocaleSplashSeen', 'true')
-          }} 
-          isLightMode={isLightMode}
-        />
-      )}
       
       <div className="flex h-screen relative overflow-hidden" style={{ backgroundColor: appliedTheme.bg }}>
       {/* Dynamic blurred background */}
