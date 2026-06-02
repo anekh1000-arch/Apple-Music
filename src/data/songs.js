@@ -31,7 +31,7 @@
  * 
  * Audio Quality (Optional field):
  * - Add quality field to indicate audio quality: quality: "320kbps" or quality: "Lossless"
- * - Recommended formats for Apple Music-like quality:
+ * - Recommended formats for Vocale-like quality:
  *   - Best balance: AAC/M4A 256kbps or MP3 320kbps
  *   - Lossless: FLAC (but large files and browser support may vary)
  * 

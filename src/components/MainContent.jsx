@@ -906,6 +906,25 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
                 </div>
               </div>
             )}
+
+            {/* About Section */}
+            <div className="backdrop-blur-xl rounded-2xl p-[18px] border w-full" style={{ backgroundColor: isLightMode ? '#FFFFFF' : 'rgba(255, 255, 255, 0.035)', borderColor: isLightMode ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.06)' }}>
+              <h3 className="text-lg font-semibold mb-4" style={{ color: isLightMode ? '#111111' : '#FFFFFF', fontSize: '17px' }}>About</h3>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm" style={{ color: isLightMode ? '#6E6E73' : '#A1A1AA' }}>App name</p>
+                  <p className="text-sm font-medium" style={{ color: isLightMode ? '#111111' : '#FFFFFF' }}>Vocale</p>
+                </div>
+                <div className="flex items-center justify-between">
+                  <p className="text-sm" style={{ color: isLightMode ? '#6E6E73' : '#A1A1AA' }}>Version</p>
+                  <p className="text-sm font-medium" style={{ color: isLightMode ? '#111111' : '#FFFFFF' }}>1.0</p>
+                </div>
+                <div className="flex items-center justify-between">
+                  <p className="text-sm" style={{ color: isLightMode ? '#6E6E73' : '#A1A1AA' }}>Made by</p>
+                  <p className="text-sm font-medium" style={{ color: isLightMode ? '#111111' : '#FFFFFF' }}>Anekh</p>
+                </div>
+              </div>
+            </div>
           </div>
         )
       default:

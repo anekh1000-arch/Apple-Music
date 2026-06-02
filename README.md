@@ -1,4 +1,4 @@
-# Apple Music
+# Vocale
 
 A minimal, Tidal-inspired music streaming application built with React, Vite, and TailwindCSS.
 
@@ -53,7 +53,7 @@ A minimal, Tidal-inspired music streaming application built with React, Vite, an
 
 ### Recommended Audio Quality
 
-For Apple Music-like quality personal streaming:
+For Vocale-like quality personal streaming:
 
 - **Best balance**: AAC/M4A 256kbps or MP3 320kbps
   - Excellent sound quality
