@@ -163,63 +163,99 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
     return '🌙'
   }
 
-  // Calculate collection statistics
-  const getCollectionStats = () => {
-    try {
-      const validSongs = songs.filter(s => s)
-      const totalSongs = validSongs.length
-      
-      const uniqueArtists = new Set(
-        validSongs
-          .map(s => s.artist)
-          .filter(a => a && a !== 'Unknown Artist')
-      )
-      const totalArtists = uniqueArtists.size
-      
-      const uniqueAlbums = new Set(
-        validSongs
-          .map(s => s.album)
-          .filter(a => a && a !== 'Unknown Album')
-      )
-      const totalAlbums = uniqueAlbums.size
-      
-      // Calculate total duration
-      let totalSeconds = 0
-      validSongs.forEach(song => {
-        if (song.duration) {
-          const parts = song.duration.split(':')
-          if (parts.length === 2) {
-            const mins = parseInt(parts[0]) || 0
-            const secs = parseInt(parts[1]) || 0
-            totalSeconds += (mins * 60) + secs
-          }
-        }
-      })
-      
-      const hours = Math.floor(totalSeconds / 3600)
-      const minutes = Math.floor((totalSeconds % 3600) / 60)
-      let durationStr = ''
-      if (hours > 0) {
-        durationStr = `${hours}h`
-      } else if (minutes > 0) {
-        durationStr = `${minutes}m`
-      } else {
-        durationStr = '0m'
-      }
-      
-      return {
-        totalSongs,
-        totalArtists,
-        totalAlbums,
-        duration: durationStr
-      }
-    } catch (error) {
-      console.error('Error calculating collection stats:', error)
-      return null
+  const parseDurationToSeconds = (value) => {
+    if (typeof value === 'number' && Number.isFinite(value) && value > 0) return value
+    if (typeof value !== 'string') return 0
+
+    const parts = value.split(':').map(part => Number.parseInt(part, 10))
+    if (parts.some(part => Number.isNaN(part))) return 0
+
+    if (parts.length === 2) {
+      return (parts[0] * 60) + parts[1]
     }
+
+    if (parts.length === 3) {
+      return (parts[0] * 3600) + (parts[1] * 60) + parts[2]
+    }
+
+    return 0
   }
 
-  const collectionStats = getCollectionStats()
+  const formatDurationTotal = (seconds) => {
+    if (!seconds) return '—'
+
+    const hours = Math.floor(seconds / 3600)
+    const minutes = Math.floor((seconds % 3600) / 60)
+
+    if (hours > 0 && minutes > 0) return `${hours}h ${minutes}m`
+    if (hours > 0) return `${hours}h`
+    return `${minutes}m`
+  }
+
+  const collectionStats = useMemo(() => {
+    const validSongs = songs.filter(Boolean)
+    const totalSongs = validSongs.length
+    const totalFavorites = favoriteSongs?.length || 0
+    const totalDurationSeconds = validSongs.reduce((total, song) => {
+      return total + parseDurationToSeconds(song.duration)
+    }, 0)
+
+    const artists = new Set(
+      validSongs
+        .map(song => song.artist)
+        .filter(artist => artist && artist !== 'Unknown Artist')
+    )
+
+    const albums = new Set(
+      validSongs
+        .map(song => song.album)
+        .filter(album => album && album !== 'Unknown Album')
+    )
+
+    const totalArtists = artists.size
+    const totalAlbums = albums.size
+    const maxStat = Math.max(totalSongs, totalArtists, totalAlbums, totalFavorites, 1)
+
+    return {
+      totalSongs,
+      totalArtists,
+      totalAlbums,
+      totalFavorites,
+      duration: formatDurationTotal(totalDurationSeconds),
+      artistsPercent: Math.min((totalArtists / maxStat) * 100, 100),
+      albumsPercent: Math.min((totalAlbums / maxStat) * 100, 100),
+      favoritesPercent: totalSongs ? Math.min((totalFavorites / totalSongs) * 100, 100) : 0,
+      durationPercent: totalDurationSeconds ? Math.min((totalDurationSeconds / (10 * 3600)) * 100, 100) : 0,
+      mixBars: [
+        { label: 'Songs', value: totalSongs, percent: Math.min((totalSongs / maxStat) * 100, 100) },
+        { label: 'Artists', value: totalArtists, percent: Math.min((totalArtists / maxStat) * 100, 100) },
+        { label: 'Favorites', value: totalFavorites, percent: totalSongs ? Math.min((totalFavorites / totalSongs) * 100, 100) : 0 }
+      ]
+    }
+  }, [songs, favoriteSongs])
+
+  const statBarStyle = {
+    background: isLightMode ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.08)'
+  }
+
+  const statBarFillStyle = {
+    background: isLightMode ? 'rgba(0, 0, 0, 0.72)' : 'rgba(255, 255, 255, 0.72)'
+  }
+
+  const renderStatRow = (label, value, subtitle, percent) => (
+    <div className="collection-stat-row">
+      <div className="flex items-start justify-between gap-4 mb-2">
+        <div>
+          <p className="collection-stat-label" style={{ color: isLightMode ? '#111111' : '#FFFFFF' }}>{label}</p>
+          <p className="collection-stat-subtitle" style={{ color: isLightMode ? '#6E6E73' : '#A1A1AA' }}>{subtitle}</p>
+        </div>
+        <p className="collection-stat-value" style={{ color: isLightMode ? '#111111' : '#FFFFFF' }}>{value}</p>
+      </div>
+      <div className="stat-bar" style={statBarStyle}>
+        <div className="stat-bar-fill" style={{ ...statBarFillStyle, width: `${percent > 0 ? Math.max(percent, 6) : 0}%` }} />
+      </div>
+    </div>
+  )
   const showInitialSkeleton = loading || isPageLoading
   const dailyMixOffset = useMemo(() => {
     const featuredCover = featuredSong ? getCoverForSong(featuredSong) : null
@@ -744,15 +780,15 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
         )
       case 'settings':
         return (
-          <div className="w-full max-w-none">
-            <h2 className="text-2xl font-semibold mb-2" style={{ color: currentTheme.text }}>Settings</h2>
+          <div className="settings-page w-full max-w-none">
+            <h2 className="settings-page-title text-2xl font-semibold mb-2" style={{ color: currentTheme.text }}>Settings</h2>
             <p className="mb-6 text-sm" style={{ color: currentTheme.textMuted }}>Customize your experience</p>
             
             {/* Profile Section */}
-            <div className="backdrop-blur-xl rounded-2xl p-5 mb-5 border w-full" style={{ backgroundColor: isLightMode ? '#FFFFFF' : 'rgba(255, 255, 255, 0.035)', borderColor: isLightMode ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.06)' }}>
+            <div className="settings-card backdrop-blur-xl rounded-2xl p-5 mb-5 border w-full" style={{ backgroundColor: isLightMode ? '#FFFFFF' : 'rgba(255, 255, 255, 0.035)', borderColor: isLightMode ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.06)' }}>
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ backgroundColor: isLightMode ? '#E5E7EB' : '#1F1F1F' }}>
-                  <span className="text-xl font-bold" style={{ color: isLightMode ? '#111111' : '#FFFFFF' }}>A</span>
+                <div className="settings-avatar w-14 h-14 rounded-full flex items-center justify-center" style={{ backgroundColor: isLightMode ? '#E5E7EB' : '#1F1F1F' }}>
+                  <span className="settings-avatar-text text-xl font-bold" style={{ color: isLightMode ? '#111111' : '#FFFFFF' }}>A</span>
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold mb-0.5" style={{ color: isLightMode ? '#111111' : '#FFFFFF' }}>Anekh</h3>
@@ -762,15 +798,15 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
             </div>
 
             {/* Appearance Selector */}
-            <div className="backdrop-blur-xl rounded-2xl p-[18px] mb-5 border w-full" style={{ backgroundColor: isLightMode ? '#FFFFFF' : 'rgba(255, 255, 255, 0.035)', borderColor: isLightMode ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.06)' }}>
-              <h3 className="text-lg font-semibold mb-4" style={{ color: isLightMode ? '#111111' : '#FFFFFF', fontSize: '17px' }}>Appearance</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full">
+            <div className="settings-card backdrop-blur-xl rounded-2xl p-[18px] mb-5 border w-full" style={{ backgroundColor: isLightMode ? '#FFFFFF' : 'rgba(255, 255, 255, 0.035)', borderColor: isLightMode ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.06)' }}>
+              <h3 className="settings-section-title text-lg font-semibold mb-4" style={{ color: isLightMode ? '#111111' : '#FFFFFF', fontSize: '17px' }}>Appearance</h3>
+              <div className="settings-option-grid grid grid-cols-1 md:grid-cols-2 gap-3 w-full">
                 <button
                   onClick={() => {
                     onAppearanceChange('dark')
                     hapticSelection()
                   }}
-                  className="flex items-center gap-3 px-4 py-[14px] rounded-2xl border transition-all"
+                  className="settings-option-row flex items-center gap-3 px-4 py-[14px] rounded-2xl border transition-all"
                   style={!isLightMode ? {
                     borderColor: 'rgba(255, 255, 255, 0.18)',
                     backgroundColor: 'rgba(255, 255, 255, 0.06)'
@@ -785,13 +821,13 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
                   }}
                 >
                   <div
-                    className="w-[42px] h-[42px] rounded-full bg-black border border-gray-600 flex-shrink-0"
+                    className="settings-swatch w-[42px] h-[42px] rounded-full bg-black border border-gray-600 flex-shrink-0"
                   />
                   <div className="text-left">
-                    <p className="text-sm font-medium" style={{ color: isLightMode ? '#111111' : '#F5F5F7', fontSize: '17px' }}>
+                    <p className="settings-option-title text-sm font-medium" style={{ color: isLightMode ? '#111111' : '#F5F5F7', fontSize: '17px' }}>
                       Dark Mode
                     </p>
-                    <p className="text-xs" style={{ color: isLightMode ? '#6E6E73' : '#A1A1AA', fontSize: '13px' }}>
+                    <p className="settings-option-subtitle text-xs" style={{ color: isLightMode ? '#6E6E73' : '#A1A1AA', fontSize: '13px' }}>
                       {!isLightMode ? 'Active' : 'Click to apply'}
                     </p>
                   </div>
@@ -801,7 +837,7 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
                     onAppearanceChange('light')
                     hapticSelection()
                   }}
-                  className="flex items-center gap-3 px-4 py-[14px] rounded-2xl border transition-all"
+                  className="settings-option-row flex items-center gap-3 px-4 py-[14px] rounded-2xl border transition-all"
                   style={isLightMode ? {
                     borderColor: 'rgba(0, 0, 0, 0.18)',
                     backgroundColor: '#FFFFFF'
@@ -821,13 +857,13 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
                   }}
                 >
                   <div
-                    className="w-[42px] h-[42px] rounded-full bg-white border border-gray-300 flex-shrink-0"
+                    className="settings-swatch w-[42px] h-[42px] rounded-full bg-white border border-gray-300 flex-shrink-0"
                   />
                   <div className="text-left">
-                    <p className="text-sm font-medium" style={{ color: isLightMode ? '#111111' : '#FFFFFF', fontSize: '17px' }}>
+                    <p className="settings-option-title text-sm font-medium" style={{ color: isLightMode ? '#111111' : '#FFFFFF', fontSize: '17px' }}>
                       Light Mode
                     </p>
-                    <p className="text-xs" style={{ color: isLightMode ? '#6E6E73' : '#A1A1AA', fontSize: '13px' }}>
+                    <p className="settings-option-subtitle text-xs" style={{ color: isLightMode ? '#6E6E73' : '#A1A1AA', fontSize: '13px' }}>
                       {isLightMode ? 'Active' : 'Click to apply'}
                     </p>
                   </div>
@@ -836,9 +872,9 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
             </div>
 
             {/* Color Style Selector (Accent Color) */}
-            <div className="backdrop-blur-xl rounded-2xl p-[18px] mb-5 border w-full" style={{ backgroundColor: isLightMode ? '#FFFFFF' : 'rgba(255, 255, 255, 0.035)', borderColor: isLightMode ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.06)' }}>
-              <h3 className="text-lg font-semibold mb-4" style={{ color: isLightMode ? '#111111' : '#FFFFFF', fontSize: '17px' }}>Accent Color</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 w-full">
+            <div className="settings-card backdrop-blur-xl rounded-2xl p-[18px] mb-5 border w-full" style={{ backgroundColor: isLightMode ? '#FFFFFF' : 'rgba(255, 255, 255, 0.035)', borderColor: isLightMode ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.06)' }}>
+              <h3 className="settings-section-title text-lg font-semibold mb-4" style={{ color: isLightMode ? '#111111' : '#FFFFFF', fontSize: '17px' }}>Accent Color</h3>
+              <div className="settings-option-grid grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 w-full">
                 {Object.entries(themes).map(([themeKey, themeColors]) => (
                   <button
                     key={themeKey}
@@ -846,7 +882,7 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
                       onThemeChange(themeKey)
                       hapticSelection()
                     }}
-                    className="p-4 rounded-2xl border transition-all"
+                    className="settings-option-row p-4 rounded-2xl border transition-all"
                     style={theme === themeKey ? {
                       borderColor: isLightMode ? 'rgba(0, 0, 0, 0.18)' : 'rgba(255, 255, 255, 0.18)',
                       backgroundColor: isLightMode ? '#FFFFFF' : 'rgba(255, 255, 255, 0.06)'
@@ -867,14 +903,14 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
                   >
                     <div className="flex items-center gap-3">
                       <div
-                        className="w-[42px] h-[42px] rounded-full flex-shrink-0"
+                        className="settings-swatch w-[42px] h-[42px] rounded-full flex-shrink-0"
                         style={{ backgroundColor: themeColors.accent }}
                       />
                       <div className="text-left">
-                        <p className="text-sm font-medium capitalize" style={{ color: theme === themeKey ? (isLightMode ? '#111111' : '#F5F5F7') : (isLightMode ? '#111111' : '#FFFFFF'), fontSize: '17px' }}>
+                        <p className="settings-option-title text-sm font-medium capitalize" style={{ color: theme === themeKey ? (isLightMode ? '#111111' : '#F5F5F7') : (isLightMode ? '#111111' : '#FFFFFF'), fontSize: '17px' }}>
                           {themeKey.replace('-', ' ')}
                         </p>
-                        <p className="text-xs" style={{ color: theme === themeKey ? (isLightMode ? '#6E6E73' : '#A1A1AA') : (isLightMode ? '#6E6E73' : '#A1A1AA'), fontSize: '13px' }}>
+                        <p className="settings-option-subtitle text-xs" style={{ color: theme === themeKey ? (isLightMode ? '#6E6E73' : '#A1A1AA') : (isLightMode ? '#6E6E73' : '#A1A1AA'), fontSize: '13px' }}>
                           {theme === themeKey ? 'Active' : 'Click to apply'}
                         </p>
                       </div>
@@ -885,8 +921,8 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
             </div>
 
             {/* Playback Section */}
-            <div className="backdrop-blur-xl rounded-2xl p-[18px] mb-5 border w-full" style={{ backgroundColor: isLightMode ? '#FFFFFF' : 'rgba(255, 255, 255, 0.035)', borderColor: isLightMode ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.06)' }}>
-              <h3 className="text-lg font-semibold mb-4" style={{ color: isLightMode ? '#111111' : '#FFFFFF', fontSize: '17px' }}>Playback</h3>
+            <div className="settings-card backdrop-blur-xl rounded-2xl p-[18px] mb-5 border w-full" style={{ backgroundColor: isLightMode ? '#FFFFFF' : 'rgba(255, 255, 255, 0.035)', borderColor: isLightMode ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.06)' }}>
+              <h3 className="settings-section-title text-lg font-semibold mb-4" style={{ color: isLightMode ? '#111111' : '#FFFFFF', fontSize: '17px' }}>Playback</h3>
 
               {/* Pause Fade Selector */}
               <div className="mb-4">
@@ -1104,32 +1140,43 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
 
             {/* Compact Collection Overview */}
             {collectionStats && (
-              <div className="backdrop-blur-xl rounded-2xl p-[18px] border w-full" style={{ backgroundColor: isLightMode ? '#FFFFFF' : 'rgba(255, 255, 255, 0.035)', borderColor: isLightMode ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.06)' }}>
-                <h3 className="text-sm font-semibold mb-3 uppercase tracking-wider" style={{ color: isLightMode ? '#6E6E73' : '#A1A1AA' }}>Your Collection</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-[14px]">
-                  <div className="text-center p-[14px] rounded-2xl" style={{ backgroundColor: isLightMode ? '#F5F5F7' : 'rgba(255, 255, 255, 0.04)' }}>
-                    <p className="text-2xl font-bold mb-1" style={{ color: isLightMode ? '#111111' : '#FFFFFF', fontSize: '28px', fontWeight: 700 }}>{collectionStats.totalSongs}</p>
-                    <p className="text-xs" style={{ color: isLightMode ? '#6E6E73' : '#A1A1AA', fontSize: '13px' }}>Songs</p>
-                  </div>
-                  <div className="text-center p-[14px] rounded-2xl" style={{ backgroundColor: isLightMode ? '#F5F5F7' : 'rgba(255, 255, 255, 0.04)' }}>
-                    <p className="text-2xl font-bold mb-1" style={{ color: isLightMode ? '#111111' : '#FFFFFF', fontSize: '28px', fontWeight: 700 }}>{collectionStats.totalArtists}</p>
-                    <p className="text-xs" style={{ color: isLightMode ? '#6E6E73' : '#A1A1AA', fontSize: '13px' }}>Artists</p>
-                  </div>
-                  <div className="text-center p-[14px] rounded-2xl" style={{ backgroundColor: isLightMode ? '#F5F5F7' : 'rgba(255, 255, 255, 0.04)' }}>
-                    <p className="text-2xl font-bold mb-1" style={{ color: isLightMode ? '#111111' : '#FFFFFF', fontSize: '28px', fontWeight: 700 }}>{collectionStats.totalAlbums}</p>
-                    <p className="text-xs" style={{ color: isLightMode ? '#6E6E73' : '#A1A1AA', fontSize: '13px' }}>Albums</p>
-                  </div>
-                  <div className="text-center p-[14px] rounded-2xl" style={{ backgroundColor: isLightMode ? '#F5F5F7' : 'rgba(255, 255, 255, 0.04)' }}>
-                    <p className="text-2xl font-bold mb-1" style={{ color: isLightMode ? '#111111' : '#FFFFFF', fontSize: '28px', fontWeight: 700 }}>{collectionStats.duration}</p>
-                    <p className="text-xs" style={{ color: isLightMode ? '#6E6E73' : '#A1A1AA', fontSize: '13px' }}>Duration</p>
+              <div className="settings-card collection-card backdrop-blur-xl rounded-2xl p-[18px] border w-full" style={{ backgroundColor: isLightMode ? 'rgba(0, 0, 0, 0.035)' : 'rgba(255, 255, 255, 0.045)', borderColor: isLightMode ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.08)' }}>
+                <h3 className="settings-section-title text-lg font-semibold mb-4" style={{ color: isLightMode ? '#111111' : '#FFFFFF', fontSize: '17px' }}>Your Collection</h3>
+
+                <div className="collection-summary mb-5">
+                  <p className="collection-total" style={{ color: isLightMode ? '#111111' : '#FFFFFF' }}>{collectionStats.totalSongs}</p>
+                  <p className="collection-caption" style={{ color: isLightMode ? '#6E6E73' : '#A1A1AA' }}>Songs in your library</p>
+                </div>
+
+                <div className="collection-stat-list">
+                  {renderStatRow('Artists', collectionStats.totalArtists, `${collectionStats.totalArtists} unique artists`, collectionStats.artistsPercent)}
+                  {collectionStats.totalAlbums > 0 && renderStatRow('Albums', collectionStats.totalAlbums, `${collectionStats.totalAlbums} albums`, collectionStats.albumsPercent)}
+                  {renderStatRow('Favorites', collectionStats.totalFavorites, `${collectionStats.totalFavorites} saved songs`, collectionStats.favoritesPercent)}
+                  {renderStatRow('Duration', collectionStats.duration, collectionStats.duration === '—' ? 'No duration data' : 'Total library duration', collectionStats.durationPercent)}
+                </div>
+
+                <div className="collection-mix-card mt-5 rounded-2xl p-4" style={{ backgroundColor: isLightMode ? 'rgba(255, 255, 255, 0.58)' : 'rgba(255, 255, 255, 0.04)', border: isLightMode ? '1px solid rgba(0, 0, 0, 0.05)' : '1px solid rgba(255, 255, 255, 0.06)' }}>
+                  <p className="collection-mix-title mb-3" style={{ color: isLightMode ? '#111111' : '#FFFFFF' }}>Library Health</p>
+                  <div className="space-y-3">
+                    {collectionStats.mixBars.map(item => (
+                      <div key={item.label}>
+                        <div className="flex justify-between mb-1.5">
+                          <span className="collection-mix-label" style={{ color: isLightMode ? '#6E6E73' : '#A1A1AA' }}>{item.label}</span>
+                          <span className="collection-mix-value" style={{ color: isLightMode ? '#111111' : '#FFFFFF' }}>{item.value}</span>
+                        </div>
+                        <div className="stat-bar" style={statBarStyle}>
+                          <div className="stat-bar-fill" style={{ ...statBarFillStyle, width: `${item.percent > 0 ? Math.max(item.percent, 6) : 0}%` }} />
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
             )}
 
             {/* About Section */}
-            <div className="backdrop-blur-xl rounded-2xl p-[18px] border w-full" style={{ backgroundColor: isLightMode ? '#FFFFFF' : 'rgba(255, 255, 255, 0.035)', borderColor: isLightMode ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.06)' }}>
-              <h3 className="text-lg font-semibold mb-4" style={{ color: isLightMode ? '#111111' : '#FFFFFF', fontSize: '17px' }}>About</h3>
+            <div className="settings-card backdrop-blur-xl rounded-2xl p-[18px] border w-full" style={{ backgroundColor: isLightMode ? '#FFFFFF' : 'rgba(255, 255, 255, 0.035)', borderColor: isLightMode ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.06)' }}>
+              <h3 className="settings-section-title text-lg font-semibold mb-4" style={{ color: isLightMode ? '#111111' : '#FFFFFF', fontSize: '17px' }}>About</h3>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <p className="text-sm" style={{ color: isLightMode ? '#6E6E73' : '#A1A1AA' }}>App name</p>
@@ -1157,7 +1204,7 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
       className={`flex-1 w-full min-w-0 overflow-y-auto p-6 pb-28 md:pb-28 ${isLightMode ? '' : 'dark'}`}
       style={{ 
         backgroundColor: currentTheme.bg,
-        paddingBottom: 'calc(7rem + env(safe-area-inset-bottom))',
+        paddingBottom: view === 'settings' ? 'calc(140px + env(safe-area-inset-bottom))' : 'calc(7rem + env(safe-area-inset-bottom))',
         animation: slideDirection && isAnimating ? `slide${slideDirection === 'next' ? 'Left' : 'Right'} 0.3s ease-out` : 'none',
         scrollbarWidth: 'none',
         msOverflowStyle: 'none'
@@ -1171,6 +1218,113 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
             width: 0;
             height: 0;
           }
+
+          .settings-page {
+            padding-bottom: calc(140px + env(safe-area-inset-bottom));
+          }
+
+          .settings-page-title {
+            font-size: 22px !important;
+          }
+
+          .settings-card {
+            padding: 20px !important;
+            border-radius: 24px !important;
+            margin-bottom: 22px !important;
+          }
+
+          .settings-section-title {
+            font-size: 20px !important;
+            margin-bottom: 14px !important;
+          }
+
+          .settings-option-grid {
+            gap: 12px !important;
+          }
+
+          .settings-option-row {
+            min-height: 72px;
+            padding: 14px 16px !important;
+            border-radius: 18px !important;
+          }
+
+          .settings-avatar {
+            width: 58px !important;
+            height: 58px !important;
+          }
+
+          .settings-avatar-text {
+            font-size: 24px !important;
+          }
+
+          .settings-swatch {
+            width: 46px !important;
+            height: 46px !important;
+          }
+
+          .settings-option-title {
+            font-size: 20px !important;
+            line-height: 1.1;
+          }
+
+          .settings-option-subtitle {
+            font-size: 14px !important;
+            line-height: 1.25;
+          }
+        }
+
+        .collection-total {
+          font-size: 44px;
+          line-height: 1;
+          font-weight: 760;
+          letter-spacing: -0.04em;
+        }
+
+        .collection-caption,
+        .collection-stat-subtitle {
+          font-size: 13px;
+          line-height: 1.25;
+        }
+
+        .collection-stat-list {
+          display: grid;
+          gap: 16px;
+        }
+
+        .collection-stat-label,
+        .collection-mix-title {
+          font-size: 14px;
+          line-height: 1.2;
+          font-weight: 650;
+        }
+
+        .collection-stat-value {
+          font-size: 15px;
+          line-height: 1.2;
+          font-weight: 700;
+        }
+
+        .stat-bar {
+          height: 6px;
+          border-radius: 999px;
+          overflow: hidden;
+        }
+
+        .stat-bar-fill {
+          height: 100%;
+          border-radius: 999px;
+          transition: width 220ms ease;
+        }
+
+        .collection-mix-label {
+          font-size: 12px;
+          line-height: 1;
+        }
+
+        .collection-mix-value {
+          font-size: 12px;
+          line-height: 1;
+          font-weight: 650;
         }
 
         @media (min-width: 768px) {

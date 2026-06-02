@@ -16,6 +16,8 @@ function FullscreenPlayer({ currentSong, isPlaying, progress, setProgress, onPla
   const dragLastYRef = useRef(0)
   const dragLastTimeRef = useRef(0)
   const dragVelocityRef = useRef(0)
+  const isClosingRef = useRef(false)
+  const closeTimerRef = useRef(null)
 
   // Get contrast colors for Midnight Black theme
   const isMidnightBlack = isMidnightBlackTheme && isMidnightBlackTheme(themeName)
@@ -32,6 +34,14 @@ function FullscreenPlayer({ currentSong, isPlaying, progress, setProgress, onPla
     }
   }, [currentSong])
 
+  useEffect(() => {
+    return () => {
+      if (closeTimerRef.current) {
+        clearTimeout(closeTimerRef.current)
+      }
+    }
+  }, [])
+
   const formatTime = (seconds) => {
     if (isNaN(seconds)) return '0:00'
     const mins = Math.floor(seconds / 60)
@@ -40,11 +50,15 @@ function FullscreenPlayer({ currentSong, isPlaying, progress, setProgress, onPla
   }
 
   const handleClose = () => {
+    if (isClosingRef.current) return
+
+    isClosingRef.current = true
     hapticSelection()
     setIsClosing(true)
-    setTimeout(() => {
+    closeTimerRef.current = setTimeout(() => {
       onClose()
-      setIsClosing(false)
+      closeTimerRef.current = null
+      isClosingRef.current = false
     }, 320)
   }
 
@@ -206,9 +220,9 @@ function FullscreenPlayer({ currentSong, isPlaying, progress, setProgress, onPla
         onPointerCancel={handlePlayerPointerUp}
         style={{
           backgroundColor: currentTheme.bg,
-          animation: isClosing ? 'slideDown 0.32s cubic-bezier(0.22, 1, 0.36, 1)' : 'slideUp 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
+          animation: isClosing ? 'none' : 'slideUp 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
           transform: isClosing ? 'translateY(100%)' : 'translateY(0)',
-          opacity: 1,
+          opacity: isClosing ? 0 : 1,
           transition: 'transform 320ms cubic-bezier(0.22, 1, 0.36, 1), opacity 220ms ease',
           touchAction: 'pan-y',
           overscrollBehavior: 'contain'

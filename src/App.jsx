@@ -87,6 +87,7 @@ function App() {
   const fadeIntentRef = useRef(null)
   const manualAudioControlRef = useRef(null)
   const userVolumeRef = useRef(loadFromStorage(STORAGE_KEYS.volume, 1))
+  const lastValidDurationRef = useRef(0)
   const [songsData, setSongsData] = useState(songs)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -356,18 +357,42 @@ function App() {
 
   const handleSeek = (e) => {
     if (audioRef.current) {
-      const seekTime = (e.target.value / 100) * audioRef.current.duration
+      const audioDuration = Number.isFinite(audioRef.current.duration) && audioRef.current.duration > 0
+        ? audioRef.current.duration
+        : lastValidDurationRef.current
+      if (!audioDuration) return
+
+      const seekTime = (e.target.value / 100) * audioDuration
       audioRef.current.currentTime = seekTime
       setProgress(e.target.value)
+      setCurrentTime(seekTime)
     }
   }
 
+  const updateDurationFromAudio = useCallback((audio) => {
+    if (Number.isFinite(audio?.duration) && audio.duration > 0) {
+      lastValidDurationRef.current = audio.duration
+      setDuration(audio.duration)
+    }
+  }, [])
+
   const handleTimeUpdate = () => {
     if (audioRef.current && currentSong) {
-      const progressPercent = (audioRef.current.currentTime / audioRef.current.duration) * 100
-      setProgress(progressPercent)
-      setCurrentTime(audioRef.current.currentTime)
-      setDuration(audioRef.current.duration)
+      const audio = audioRef.current
+      const audioDuration = Number.isFinite(audio.duration) && audio.duration > 0
+        ? audio.duration
+        : lastValidDurationRef.current
+      const audioCurrentTime = Number.isFinite(audio.currentTime) && audio.currentTime >= 0
+        ? audio.currentTime
+        : currentTime
+
+      if (audioDuration > 0) {
+        const progressPercent = (audioCurrentTime / audioDuration) * 100
+        setProgress(Math.min(Math.max(progressPercent, 0), 100))
+      }
+
+      setCurrentTime(audioCurrentTime)
+      updateDurationFromAudio(audio)
     }
   }
 
@@ -566,9 +591,11 @@ function App() {
     if (!shouldFadeIn) {
       setIsPlaying(true)
     }
-    setProgress(0)
-    setCurrentTime(0)
-    setDuration(0)
+
+    if (!isSameSong) {
+      setProgress(0)
+      setCurrentTime(0)
+    }
 
     // Extract dominant color from album artwork
     if (song.cover) {
@@ -642,7 +669,6 @@ function App() {
     setCurrentSong(songsData[nextIndex])
     setProgress(0)
     setCurrentTime(0)
-    setDuration(0)
   }
 
   const handlePrevious = () => {
@@ -654,7 +680,6 @@ function App() {
     setCurrentSong(songsData[prevIndex])
     setProgress(0)
     setCurrentTime(0)
-    setDuration(0)
   }
 
   const addToPlaylist = (song) => {
@@ -692,7 +717,6 @@ function App() {
     setIsPlaying(true)
     setProgress(0)
     setCurrentTime(0)
-    setDuration(0)
   }
 
   const toggleFavorite = (song) => {
@@ -888,6 +912,16 @@ function App() {
   //   }
   // }, [handleTouchStart, handleTouchMove, handleTouchEnd])
 
+  const displayDuration = Number.isFinite(duration) && duration > 0
+    ? duration
+    : lastValidDurationRef.current
+  const displayCurrentTime = Number.isFinite(currentTime) && currentTime >= 0
+    ? currentTime
+    : (audioRef.current?.currentTime || 0)
+  const displayProgress = displayDuration > 0
+    ? Math.min(Math.max((displayCurrentTime / displayDuration) * 100, 0), 100)
+    : (Number.isFinite(progress) ? progress : 0)
+
   return (
     <>
       {/* Global body background based on theme */}
@@ -973,9 +1007,7 @@ function App() {
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={() => {
           if (audioRef.current) {
-            setDuration(audioRef.current.duration || 0)
-            setCurrentTime(0)
-            setProgress(0)
+            updateDurationFromAudio(audioRef.current)
           }
         }}
         onEnded={handleNext}
@@ -983,7 +1015,7 @@ function App() {
       <Player
         currentSong={currentSong}
         isPlaying={isPlaying}
-        progress={progress}
+        progress={displayProgress}
         setProgress={setProgress}
         onPlay={handlePlay}
         onPause={handlePause}
@@ -995,8 +1027,8 @@ function App() {
         }}
         currentTheme={appliedTheme}
         audioRef={audioRef}
-        currentTime={currentTime}
-        duration={duration}
+        currentTime={displayCurrentTime}
+        duration={displayDuration}
         onSeek={handleSeek}
         onTimeUpdate={handleTimeUpdate}
         isLightMode={isLightMode}
@@ -1012,7 +1044,7 @@ function App() {
         <FullscreenPlayer
           currentSong={currentSong}
           isPlaying={isPlaying}
-          progress={progress}
+          progress={displayProgress}
           setProgress={setProgress}
           onPlay={handlePlay}
           onPause={handlePause}
@@ -1020,9 +1052,9 @@ function App() {
           onPrevious={handlePrevious}
           onClose={() => setShowFullscreenPlayer(false)}
           currentTheme={appliedTheme}
-          currentTime={currentTime}
+          currentTime={displayCurrentTime}
           setCurrentTime={setCurrentTime}
-          duration={duration}
+          duration={displayDuration}
           onSeek={handleSeek}
           audioRef={audioRef}
           isLightMode={isLightMode}
