@@ -120,7 +120,7 @@ function Sidebar({ view, setView, playlist, removeFromPlaylist, currentTheme, is
       </aside>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 backdrop-blur-xl z-30" style={{ padding: '6px 0 calc(6px + env(safe-area-inset-bottom))', backgroundColor: isLightMode ? 'rgba(255, 255, 255, 0.95)' : 'rgba(5, 5, 5, 0.95)', borderTop: isLightMode ? '1px solid rgba(0, 0, 0, 0.06)' : '1px solid rgba(255, 255, 255, 0.06)' }}>
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 backdrop-blur-xl z-30" style={{ padding: '8px 0 calc(8px + env(safe-area-inset-bottom))', backgroundColor: isLightMode ? 'rgba(255, 255, 255, 0.95)' : 'rgba(5, 5, 5, 0.95)', borderTop: isLightMode ? '1px solid rgba(0, 0, 0, 0.06)' : '1px solid rgba(255, 255, 255, 0.06)' }}>
         <div className="flex justify-around items-center">
           {mobileMenuItems.map((item) => {
             const Icon = item.icon
@@ -131,18 +131,19 @@ function Sidebar({ view, setView, playlist, removeFromPlaylist, currentTheme, is
                   setView(item.id)
                   hapticSelection()
                 }}
-                className="flex flex-col items-center justify-center gap-1 px-0 py-0"
+                className="flex flex-col items-center justify-center px-0 py-0"
                 style={{
                   flex: 1,
                   height: '56px',
+                  gap: '4px',
                   color: view === item.id ? (isLightMode ? '#111111' : '#FFFFFF') : (isLightMode ? '#6E6E73' : '#8A8A93'),
                   backgroundColor: 'transparent',
                   padding: 0,
                   margin: 0
                 }}
               >
-                <Icon size={24} style={{ width: '24px', height: '24px', display: 'block', color: view === item.id ? (isLightMode ? '#111111' : '#FFFFFF') : (isLightMode ? '#6E6E73' : '#8A8A93') }} />
-                <span className="font-medium" style={{ fontSize: '11px', lineHeight: 1, marginTop: '3px', color: view === item.id ? (isLightMode ? '#111111' : '#FFFFFF') : (isLightMode ? '#6E6E73' : '#8A8A93') }}>{item.label}</span>
+                <Icon size={22} style={{ width: '22px', height: '22px', display: 'block', color: view === item.id ? (isLightMode ? '#111111' : '#FFFFFF') : (isLightMode ? '#6E6E73' : '#8A8A93') }} />
+                <span className="font-medium" style={{ fontSize: '12px', fontWeight: 500, lineHeight: 1, marginTop: '0', color: view === item.id ? (isLightMode ? '#111111' : '#FFFFFF') : (isLightMode ? '#6E6E73' : '#8A8A93') }}>{item.label}</span>
               </button>
             )
           })}
