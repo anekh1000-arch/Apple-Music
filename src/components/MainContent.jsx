@@ -234,7 +234,7 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
     switch (view) {
       case 'home':
         return (
-          <div className="w-full md:px-0 px-4" style={{ backgroundColor: isLightMode ? '#F5F5F7' : '#050505', minHeight: '100vh', paddingBottom: '180px' }}>
+          <div className="w-full md:px-0 px-4" style={{ backgroundColor: isLightMode ? '#FFFFFF' : '#050505', minHeight: '100vh', paddingBottom: '180px' }}>
             {/* Mobile Header */}
             <div className="md:hidden mb-6 pt-4">
               <h1 className="text-2xl font-bold mb-1" style={{ color: isLightMode ? '#111111' : '#FFFFFF' }}>
@@ -258,10 +258,10 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
                   onClick={() => handleAlbumClick(featuredSong)}
                   style={{
                     background: isLightMode 
-                      ? 'linear-gradient(135deg, #F5F5F7 0%, #E5E7EB 100%)'
+                      ? 'rgba(245, 245, 247, 0.75)'
                       : 'linear-gradient(135deg, #1B1B2F 0%, #252545 45%, #141421 100%)',
-                    borderColor: isLightMode ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.08)',
-                    boxShadow: isLightMode ? '0 4px 20px rgba(0, 0, 0, 0.08)' : '0 20px 50px rgba(0, 0, 0, 0.35)'
+                    borderColor: isLightMode ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.08)',
+                    boxShadow: isLightMode ? '0 18px 45px rgba(0, 0, 0, 0.06)' : '0 20px 50px rgba(0, 0, 0, 0.35)'
                   }}
                   className={`relative backdrop-blur-xl rounded-3xl overflow-hidden cursor-pointer group hover:scale-[1.02] hover:-translate-y-1 transition-all duration-200 border ${isFeaturedTransitioning ? 'opacity-0' : 'opacity-100'}`}
                 >
