@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-function SplashScreen({ onComplete }) {
+function SplashScreen({ onComplete, isLightMode }) {
   const [isVisible, setIsVisible] = useState(true)
   const [shouldAnimate, setShouldAnimate] = useState(true)
 
@@ -9,8 +9,12 @@ function SplashScreen({ onComplete }) {
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     setShouldAnimate(!prefersReducedMotion)
 
-    // Auto-hide after animation
-    const duration = prefersReducedMotion ? 300 : 1000
+    // Auto-hide after 1500ms total
+    // Logo fade in: 400ms
+    // Underline draw: 500ms
+    // Hold: 300ms
+    // Fade out: 300ms
+    const duration = prefersReducedMotion ? 0 : 1500
     const timer = setTimeout(() => {
       setIsVisible(false)
       setTimeout(onComplete, 300) // Wait for fade out
@@ -23,8 +27,9 @@ function SplashScreen({ onComplete }) {
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black"
+      className="fixed inset-0 z-50 flex items-center justify-center"
       style={{
+        backgroundColor: isLightMode ? '#FFFFFF' : '#050505',
         opacity: isVisible ? 1 : 0,
         transition: shouldAnimate ? 'opacity 300ms ease-in-out' : 'none'
       }}
@@ -32,50 +37,105 @@ function SplashScreen({ onComplete }) {
       <div 
         className="flex flex-col items-center justify-center"
         style={{
-          transform: shouldAnimate ? 'scale(1)' : 'scale(1)',
-          transition: shouldAnimate ? 'transform 600ms ease-out' : 'none'
+          transform: shouldAnimate ? 'translateY(0)' : 'translateY(0)',
+          opacity: shouldAnimate ? 1 : 1,
+          transition: shouldAnimate ? 'opacity 400ms ease-out, transform 400ms ease-out' : 'none'
         }}
       >
-        {/* Logo */}
-        <div 
-          className="relative"
+        {/* Cursive Vocale Logo */}
+        <h1 
+          className="text-6xl font-bold mb-4"
           style={{
-            animation: shouldAnimate ? 'pulse 1.5s ease-in-out infinite' : 'none'
+            fontFamily: "'Pacifico', 'Brush Script MT', cursive",
+            color: isLightMode ? '#000000' : '#FFFFFF',
+            opacity: 0,
+            animation: shouldAnimate ? 'fadeInUp 400ms ease-out forwards' : 'none',
+            animationDelay: '0ms'
           }}
         >
-          <svg viewBox="0 0 24 24" fill="currentColor" className="w-20 h-20 text-white">
-            <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
-          </svg>
-          
-          {/* Glow effect */}
-          <div 
-            className="absolute inset-0 rounded-full blur-2xl opacity-30"
-            style={{
-              background: 'radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%)',
-              animation: shouldAnimate ? 'glow 2s ease-in-out infinite' : 'none'
-            }}
-          />
+          Vocale
+        </h1>
+
+        {/* Underline */}
+        <div 
+          className="w-32 h-0.5 rounded-full"
+          style={{
+            backgroundColor: isLightMode ? '#000000' : '#FFFFFF',
+            width: '0px',
+            opacity: 0,
+            animation: shouldAnimate ? 'underlineDraw 500ms ease-out forwards' : 'none',
+            animationDelay: '400ms'
+          }}
+        />
+
+        {/* Optional subtle sound wave pulse */}
+        <div 
+          className="absolute mt-20"
+          style={{
+            display: 'flex',
+            gap: '4px',
+            alignItems: 'center',
+            opacity: 0,
+            animation: shouldAnimate ? 'fadeIn 500ms ease-out forwards' : 'none',
+            animationDelay: '400ms'
+          }}
+        >
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div
+              key={i}
+              style={{
+                width: '3px',
+                height: '12px',
+                backgroundColor: isLightMode ? '#000000' : '#FFFFFF',
+                borderRadius: '2px',
+                animation: shouldAnimate ? `soundWave 1s ease-in-out infinite` : 'none',
+                animationDelay: `${i * 100}ms`
+              }}
+            />
+          ))}
         </div>
       </div>
 
       <style>{`
-        @keyframes pulse {
-          0%, 100% {
-            transform: scale(1);
+        @import url('https://fonts.googleapis.com/css2?family=Pacifico&display=swap');
+
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
           }
-          50% {
-            transform: scale(1.05);
+          to {
+            opacity: 1;
+            transform: translateY(0);
           }
         }
 
-        @keyframes glow {
+        @keyframes underlineDraw {
+          from {
+            width: 0px;
+            opacity: 0;
+          }
+          to {
+            width: 128px;
+            opacity: 1;
+          }
+        }
+
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+
+        @keyframes soundWave {
           0%, 100% {
-            opacity: 0.3;
-            transform: scale(1);
+            transform: scaleY(0.5);
           }
           50% {
-            opacity: 0.5;
-            transform: scale(1.1);
+            transform: scaleY(1);
           }
         }
       `}</style>
