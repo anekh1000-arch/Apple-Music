@@ -121,7 +121,9 @@ function Sidebar({ view, setView, playlist, removeFromPlaylist, currentTheme, is
                     <img
                       src={getCoverForSong(song)}
                       alt={song.title}
-                      className="w-8 h-8 rounded object-cover group-hover:scale-110 transition-transform duration-300"
+                      loading="lazy"
+                      decoding="async"
+                      className="w-8 h-8 rounded object-cover song-cover group-hover:scale-110 transition-transform duration-300"
                       onError={() => handleImageError(song.id)}
                     />
                   )}
@@ -149,38 +151,41 @@ function Sidebar({ view, setView, playlist, removeFromPlaylist, currentTheme, is
 }
 
 const MobileBottomNav = memo(function MobileBottomNav({ view, setView, isLightMode }) {
+  const activeIndex = Math.max(0, MOBILE_MENU_ITEMS.findIndex(item => item.id === view))
+
   return (
     <nav className={`mobile-bottom-nav md:hidden fixed bottom-0 left-0 right-0 z-30 ${isLightMode ? '' : 'dark'}`}>
-      <div className="flex justify-around items-center px-2" style={{ height: '100%' }}>
-        {MOBILE_MENU_ITEMS.map((item) => {
-          const Icon = item.icon
-          const isActive = view === item.id
-          const itemColor = isActive
-            ? (isLightMode ? '#111111' : '#FFFFFF')
-            : (isLightMode ? '#6E6E73' : '#8A8A93')
+      <div
+        className="mobile-nav-indicator"
+        style={{
+          width: `${100 / MOBILE_MENU_ITEMS.length}%`,
+          transform: `translateX(${activeIndex * 100}%)`
+        }}
+      />
+      {MOBILE_MENU_ITEMS.map((item) => {
+        const Icon = item.icon
+        const isActive = view === item.id
+        const itemColor = isActive
+          ? (isLightMode ? '#111111' : '#FFFFFF')
+          : (isLightMode ? '#6E6E73' : '#8A8A93')
 
-          return (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => {
-                if (view !== item.id) {
-                  setView(item.id)
-                }
-              }}
-              className={`nav-item flex flex-col items-center justify-center px-0 py-0 ${isActive ? 'active' : ''}`}
-              style={{
-                flex: 1,
-                gap: '2px',
-                color: itemColor
-              }}
-            >
-              <Icon className="nav-icon" size={23} style={{ display: 'block', color: itemColor }} />
-              <span className="nav-label" style={{ color: itemColor }}>{item.label}</span>
-            </button>
-          )
-        })}
-      </div>
+        return (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => {
+              if (view !== item.id) {
+                setView(item.id)
+              }
+            }}
+            className={`mobile-nav-item ${isActive ? 'active' : ''}`}
+            style={{ color: itemColor }}
+          >
+            <Icon className="mobile-nav-icon" size={23} style={{ display: 'block', color: itemColor }} />
+            <span className="mobile-nav-label" style={{ color: itemColor }}>{item.label}</span>
+          </button>
+        )
+      })}
     </nav>
   )
 })

@@ -73,10 +73,18 @@ const getMidnightBlackContrast = () => {
   }
 }
 
+const PAUSE_FADE_STORAGE_KEY = 'aura_pause_fade_duration'
+const PAUSE_FADE_OPTIONS = {
+  off: 0,
+  short: 450,
+  medium: 700,
+  long: 1100
+}
+
 function App() {
   const audioRef = useRef(null)
   const fadeAnimationRef = useRef(null)
-  const isFadingRef = useRef(false)
+  const fadeIntentRef = useRef(null)
   const manualAudioControlRef = useRef(null)
   const userVolumeRef = useRef(loadFromStorage(STORAGE_KEYS.volume, 1))
   const [songsData, setSongsData] = useState(songs)
@@ -103,6 +111,10 @@ function App() {
     return loadFromStorage(STORAGE_KEYS.favorites, [])
   })
   const [sleepTimer, setSleepTimer] = useState('off')
+  const [pauseFadeMode, setPauseFadeMode] = useState(() => {
+    const saved = localStorage.getItem(PAUSE_FADE_STORAGE_KEY)
+    return Object.prototype.hasOwnProperty.call(PAUSE_FADE_OPTIONS, saved) ? saved : 'medium'
+  })
 
   // Sleep timer logic
   useEffect(() => {
@@ -210,49 +222,51 @@ function App() {
     localStorage.setItem('appearance', appearance)
   }
 
+  const pauseFadeDuration = PAUSE_FADE_OPTIONS[pauseFadeMode] ?? PAUSE_FADE_OPTIONS.medium
+  const FADE_IN_MS = 350
+
   const clampVolume = (value) => Math.max(0, Math.min(1, Number.isFinite(value) ? value : 1))
-  const FADE_OUT_DURATION = 900
-  const FADE_IN_DURATION = 500
 
   const cancelFade = useCallback(() => {
     if (fadeAnimationRef.current) {
       cancelAnimationFrame(fadeAnimationRef.current)
       fadeAnimationRef.current = null
     }
-
-    isFadingRef.current = false
   }, [])
 
   const restoreUserVolume = useCallback(() => {
     if (audioRef.current) {
-      audioRef.current.volume = clampVolume(userVolumeRef.current)
+      const savedVolume = loadFromStorage(STORAGE_KEYS.volume, userVolumeRef.current)
+      userVolumeRef.current = clampVolume(savedVolume)
+      audioRef.current.volume = userVolumeRef.current
     }
   }, [])
 
-  const easeOutCubic = (t) => {
-    return 1 - Math.pow(1 - t, 3)
+  const easeInOutSine = (t) => {
+    return -(Math.cos(Math.PI * t) - 1) / 2
   }
 
   const fadeVolume = useCallback((audio, from, to, duration, onComplete) => {
     cancelFade()
 
-    isFadingRef.current = true
-    const start = performance.now()
+    const startTime = performance.now()
     const startVolume = clampVolume(from)
-    const targetVolume = clampVolume(to)
+    const endVolume = clampVolume(to)
+
+    audio.volume = startVolume
 
     function step(now) {
-      const rawProgress = Math.min((now - start) / duration, 1)
-      const easedProgress = easeOutCubic(rawProgress)
-      const nextVolume = startVolume + (targetVolume - startVolume) * easedProgress
+      const rawProgress = Math.min((now - startTime) / duration, 1)
+      const eased = easeInOutSine(rawProgress)
+      const nextVolume = startVolume + (endVolume - startVolume) * eased
 
       audio.volume = clampVolume(nextVolume)
 
       if (rawProgress < 1) {
         fadeAnimationRef.current = requestAnimationFrame(step)
       } else {
+        audio.volume = endVolume
         fadeAnimationRef.current = null
-        isFadingRef.current = false
         if (onComplete) onComplete()
       }
     }
@@ -260,46 +274,60 @@ function App() {
     fadeAnimationRef.current = requestAnimationFrame(step)
   }, [cancelFade])
 
-  const getSavedVolume = useCallback((audio) => {
-    if (!audio) return clampVolume(userVolumeRef.current)
-
-    if (!isFadingRef.current) {
-      userVolumeRef.current = clampVolume(audio.volume)
-    }
-
-    return clampVolume(userVolumeRef.current)
+  const getSavedVolume = useCallback(() => {
+    const savedVolume = loadFromStorage(STORAGE_KEYS.volume, userVolumeRef.current)
+    userVolumeRef.current = clampVolume(savedVolume)
+    return userVolumeRef.current
   }, [])
 
   const pauseWithFade = useCallback(() => {
     const audio = audioRef.current
     if (!audio) return
 
-    const savedVolume = getSavedVolume(audio)
+    cancelFade()
+    fadeIntentRef.current = 'pause'
+
+    const savedVolume = getSavedVolume()
+    const currentAudioVolume = audio.volume > 0 ? audio.volume : savedVolume
 
     manualAudioControlRef.current = 'pause'
-    fadeVolume(audio, audio.volume, 0, FADE_OUT_DURATION, () => {
+    setIsPlaying(false)
+
+    if (pauseFadeDuration === 0) {
+      audio.pause()
+      audio.volume = savedVolume
+      return
+    }
+
+    fadeVolume(audio, currentAudioVolume, 0, pauseFadeDuration, () => {
+      if (fadeIntentRef.current !== 'pause') return
+
       audio.pause()
       audio.volume = savedVolume
     })
-
-    setIsPlaying(false)
-  }, [fadeVolume, getSavedVolume])
+  }, [cancelFade, fadeVolume, getSavedVolume, pauseFadeDuration])
 
   const playWithFade = useCallback(async () => {
     const audio = audioRef.current
     if (!audio) return
 
-    const fromVolume = isFadingRef.current ? clampVolume(audio.volume) : 0
-    const savedVolume = getSavedVolume(audio)
-
     cancelFade()
+    fadeIntentRef.current = 'play'
+
+    const savedVolume = getSavedVolume()
+    const startVolume = audio.paused ? 0 : clampVolume(audio.volume)
+
     manualAudioControlRef.current = 'play'
-    audio.volume = fromVolume
+    audio.volume = startVolume
 
     try {
       await audio.play()
       setIsPlaying(true)
-      fadeVolume(audio, fromVolume, savedVolume, FADE_IN_DURATION)
+
+      fadeVolume(audio, startVolume, savedVolume, FADE_IN_MS, () => {
+        if (fadeIntentRef.current !== 'play') return
+        audio.volume = savedVolume
+      })
     } catch (error) {
       console.error('Audio play failed:', error)
       audio.volume = savedVolume
@@ -872,10 +900,11 @@ function App() {
       <div className="flex h-screen relative overflow-hidden" style={{ backgroundColor: appliedTheme.bg }}>
       {/* Dynamic blurred background */}
       {currentSong && !isLightMode && (
-        <div className="absolute inset-0 z-0">
+        <div className="hidden md:block absolute inset-0 z-0">
           <img
             src={currentSong.cover}
             alt=""
+            decoding="async"
             className="w-full h-full object-cover opacity-40 blur-3xl scale-110 transition-all duration-1000 ease-in-out"
           />
           <div className="absolute inset-0 bg-black/60" />
@@ -932,6 +961,8 @@ function App() {
           toggleFavorite={toggleFavorite}
           sleepTimer={sleepTimer}
           setSleepTimer={setSleepTimer}
+          pauseFadeMode={pauseFadeMode}
+          setPauseFadeMode={setPauseFadeMode}
         />
       </div>
       

@@ -5,7 +5,7 @@ import { getDailyPick, getDailyRecommendations } from '../lib/dailyPick'
 import { getCoverForSong } from '../utils/covers'
 import Skeleton from './ui/Skeleton'
 
-function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, addToPlaylist, playlist, queue, addToQueue, removeFromQueue, playFromQueue, recentlyPlayed, songs, loading, error, onOpenFullscreen, listeningStats, favoriteArtist, favoriteAlbum, theme, currentTheme, onThemeChange, themes, slideDirection, isAnimating, isLightMode, onAppearanceChange, hapticFeedbackEnabled, setHapticFeedbackEnabled, favoriteSongs, toggleFavorite, sleepTimer, setSleepTimer }) {
+function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, addToPlaylist, playlist, queue, addToQueue, removeFromQueue, playFromQueue, recentlyPlayed, songs, loading, error, onOpenFullscreen, listeningStats, favoriteArtist, favoriteAlbum, theme, currentTheme, onThemeChange, themes, slideDirection, isAnimating, isLightMode, onAppearanceChange, hapticFeedbackEnabled, setHapticFeedbackEnabled, favoriteSongs, toggleFavorite, sleepTimer, setSleepTimer, pauseFadeMode, setPauseFadeMode }) {
   const filteredSongs = useMemo(() => songs.filter(song =>
     song.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     song.artist.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -221,6 +221,16 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
 
   const collectionStats = getCollectionStats()
   const showInitialSkeleton = loading || isPageLoading
+  const dailyMixOffset = useMemo(() => {
+    const featuredCover = featuredSong ? getCoverForSong(featuredSong) : null
+
+    if (!featuredCover || recommendedSongs.length === 0) {
+      return 0
+    }
+
+    const firstDailyMixCover = getCoverForSong(recommendedSongs[0])
+    return firstDailyMixCover === featuredCover ? 1 : 0
+  }, [featuredSong, recommendedSongs])
 
   const renderFeaturedAlbumSkeleton = () => (
     <div className="mb-8">
@@ -232,7 +242,7 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
           borderColor: isLightMode ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.08)',
           boxShadow: isLightMode ? '0 18px 45px rgba(0, 0, 0, 0.06)' : '0 20px 50px rgba(0, 0, 0, 0.35)'
         }}
-        className="relative backdrop-blur-xl rounded-3xl overflow-hidden border"
+        className="relative backdrop-blur-xl mobile-lite-blur rounded-3xl overflow-hidden border"
       >
         <div className="md:hidden flex flex-col p-5">
           <Skeleton className="w-28 h-3 mb-3 rounded-full" />
@@ -261,7 +271,7 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
   )
 
   const renderHorizontalCardSkeletons = (count) => (
-    <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 pr-4 md:mx-0 md:px-0 md:pr-0">
+    <div className="flex gap-4 overflow-x-auto mobile-scroll pb-2 scrollbar-hide -mx-4 px-4 pr-4 md:mx-0 md:px-0 md:pr-0">
       {Array.from({ length: count }).map((_, index) => (
         <div key={index} className="flex-shrink-0 w-36 md:w-40">
           <Skeleton className="w-full aspect-square rounded-2xl mb-3" />
@@ -273,7 +283,7 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
   )
 
   const renderSongRowSkeletons = (count) => (
-    <div className="backdrop-blur-xl rounded-xl overflow-hidden border w-full" style={{ backgroundColor: `${currentTheme.surfaceLight}99`, borderColor: currentTheme.border }}>
+    <div className="backdrop-blur-xl mobile-lite-blur rounded-xl overflow-hidden border w-full" style={{ backgroundColor: `${currentTheme.surfaceLight}99`, borderColor: currentTheme.border }}>
       <div className="md:hidden">
         {Array.from({ length: count }).map((_, index) => (
           <div key={index} className="flex items-center gap-3 p-3 border-b last:border-b-0" style={{ borderColor: currentTheme.border }}>
@@ -409,7 +419,7 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
                     borderColor: isLightMode ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.08)',
                     boxShadow: isLightMode ? '0 18px 45px rgba(0, 0, 0, 0.06)' : '0 20px 50px rgba(0, 0, 0, 0.35)'
                   }}
-                  className={`relative backdrop-blur-xl rounded-3xl overflow-hidden cursor-pointer group hover:scale-[1.02] hover:-translate-y-1 transition-all duration-200 border ${isFeaturedTransitioning ? 'opacity-0' : 'opacity-100'}`}
+                  className={`relative backdrop-blur-xl mobile-lite-blur rounded-3xl overflow-hidden cursor-pointer group hover:scale-[1.02] hover:-translate-y-1 transition-all duration-200 border ${isFeaturedTransitioning ? 'opacity-0' : 'opacity-100'}`}
                 >
                   {/* Mobile Layout */}
                   <div className="md:hidden flex flex-col p-5">
@@ -431,7 +441,8 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
                           <img
                             src={getCoverForSong(featuredSong)}
                             alt={featuredSong.title}
-                            className="w-full h-full rounded-2xl object-cover shadow-xl transition-all duration-300 group-hover:scale-105"
+                            decoding="async"
+                            className="w-full h-full rounded-2xl object-cover song-cover shadow-xl transition-all duration-300 group-hover:scale-105 mobile-soft-shadow"
                             onError={() => handleImageError(featuredSong.id)}
                           />
                         )}
@@ -475,7 +486,8 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
                       <img
                         src={getCoverForSong(featuredSong)}
                         alt={featuredSong.title}
-                        className="w-32 h-32 rounded-xl object-cover shadow-2xl transition-all duration-300 group-hover:scale-105"
+                        decoding="async"
+                        className="w-32 h-32 rounded-xl object-cover song-cover shadow-2xl transition-all duration-300 group-hover:scale-105"
                         onError={() => handleImageError(featuredSong.id)}
                       />
                     )}
@@ -508,24 +520,12 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
             {recommendedSongs.length > 0 && (
               <div className="mb-8">
                 <h2 className="text-lg font-semibold mb-4" style={{ color: isLightMode ? '#111111' : '#FFFFFF' }}>Daily Mix</h2>
-                <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 pr-4 md:mx-0 md:px-0 md:pr-0">
-                  {(() => {
-                    // Calculate Featured Album cover
-                    const featuredCover = featuredSong ? getCoverForSong(featuredSong) : null;
-                    // Calculate offset to avoid duplicate with Featured Album
-                    let dailyMixOffset = 0;
-                    if (featuredCover && recommendedSongs.length > 0) {
-                      const firstDailyMixCover = getCoverForSong(recommendedSongs[0]);
-                      if (firstDailyMixCover === featuredCover) {
-                        dailyMixOffset = 1;
-                      }
-                    }
-                    
-                    return recommendedSongs.map((song, index) => (
+                <div className="flex gap-4 overflow-x-auto mobile-scroll pb-2 scrollbar-hide -mx-4 px-4 pr-4 md:mx-0 md:px-0 md:pr-0">
+                  {recommendedSongs.map((song, index) => (
                       <div
                         key={song.id}
                         onClick={() => handleAlbumClick(song)}
-                        className="flex-shrink-0 w-36 md:w-40 group cursor-pointer"
+                        className="flex-shrink-0 w-36 md:w-40 group cursor-pointer song-card"
                       >
                         <div className="relative mb-3">
                           {imageErrors[song.id] ? (
@@ -540,12 +540,14 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
                             <img
                               src={getCoverForSong(song, dailyMixOffset)}
                               alt={song.title}
-                              className="w-full aspect-square object-cover rounded-2xl group-hover:scale-105 transition-transform duration-200"
+                              loading="lazy"
+                              decoding="async"
+                              className="w-full aspect-square object-cover song-cover rounded-2xl group-hover:scale-105 transition-transform duration-200"
                               onError={() => handleImageError(song.id)}
                             />
                           )}
-                        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-2xl flex items-center justify-center backdrop-blur-sm" style={{ backgroundColor: 'rgba(0, 0, 0, 0.4)' }}>
-                          <div className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg backdrop-blur-md transition-all duration-200 group-hover:bg-opacity-22" style={{ backgroundColor: 'rgba(255, 255, 255, 0.14)', border: '1px solid rgba(255, 255, 255, 0.25)' }}>
+                        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-2xl flex items-center justify-center backdrop-blur-sm mobile-lite-blur" style={{ backgroundColor: 'rgba(0, 0, 0, 0.4)' }}>
+                          <div className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg backdrop-blur-md mobile-lite-blur transition-all duration-200 group-hover:bg-opacity-22" style={{ backgroundColor: 'rgba(255, 255, 255, 0.14)', border: '1px solid rgba(255, 255, 255, 0.25)' }}>
                             <Play size={20} fill="white" className="text-white ml-0.5" />
                           </div>
                         </div>
@@ -555,7 +557,7 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
                         <p className="text-xs truncate" style={{ color: isLightMode ? '#6E6E73' : '#A1A1AA' }}>{song.artist}</p>
                       )}
                     </div>
-                  ))})()}
+                  ))}
                 </div>
               </div>
             )}
@@ -564,12 +566,12 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
             {recentlyPlayed && recentlyPlayed.length > 0 && (
               <div className="mb-8">
                 <h2 className="text-lg font-semibold mb-4" style={{ color: isLightMode ? '#111111' : '#FFFFFF' }}>Recently Played</h2>
-                <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 pr-4 md:mx-0 md:px-0 md:pr-0">
+                <div className="flex gap-3 overflow-x-auto mobile-scroll pb-2 scrollbar-hide -mx-4 px-4 pr-4 md:mx-0 md:px-0 md:pr-0">
                   {recentlyPlayed.map((song, index) => (
                     <div
                       key={song.id}
                       onClick={() => handleAlbumClick(song)}
-                      className="flex-shrink-0 w-36 md:w-40 group cursor-pointer"
+                      className="flex-shrink-0 w-36 md:w-40 group cursor-pointer song-card"
                     >
                       <div className="relative mb-3">
                         {imageErrors[song.id] ? (
@@ -584,12 +586,14 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
                           <img
                             src={getCoverForSong(song)}
                             alt={song.title}
-                            className="w-full aspect-square object-cover rounded-2xl group-hover:scale-105 transition-transform duration-200"
+                            loading="lazy"
+                            decoding="async"
+                            className="w-full aspect-square object-cover song-cover rounded-2xl group-hover:scale-105 transition-transform duration-200"
                             onError={() => handleImageError(song.id)}
                           />
                         )}
-                        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-2xl flex items-center justify-center backdrop-blur-sm" style={{ backgroundColor: 'rgba(0, 0, 0, 0.4)' }}>
-                          <div className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg backdrop-blur-md transition-all duration-200 group-hover:bg-opacity-22" style={{ backgroundColor: 'rgba(255, 255, 255, 0.14)', border: '1px solid rgba(255, 255, 255, 0.25)' }}>
+                        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-2xl flex items-center justify-center backdrop-blur-sm mobile-lite-blur" style={{ backgroundColor: 'rgba(0, 0, 0, 0.4)' }}>
+                          <div className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg backdrop-blur-md mobile-lite-blur transition-all duration-200 group-hover:bg-opacity-22" style={{ backgroundColor: 'rgba(255, 255, 255, 0.14)', border: '1px solid rgba(255, 255, 255, 0.25)' }}>
                             <Play size={20} fill="white" className="text-white ml-0.5" />
                           </div>
                         </div>
@@ -607,12 +611,12 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
             {/* Recently Added Section */}
             <div className="mb-8">
               <h2 className="text-lg font-semibold mb-4" style={{ color: isLightMode ? '#111111' : '#FFFFFF' }}>Recently Added</h2>
-              <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 pr-4 md:mx-0 md:px-0 md:pr-0">
+              <div className="flex gap-3 overflow-x-auto mobile-scroll pb-2 scrollbar-hide -mx-4 px-4 pr-4 md:mx-0 md:px-0 md:pr-0">
                 {songs.map((song, index) => (
                   <div
                     key={song.id}
                     onClick={() => handleAlbumClick(song)}
-                    className="flex-shrink-0 w-36 md:w-40 group cursor-pointer"
+                    className="flex-shrink-0 w-36 md:w-40 group cursor-pointer song-card"
                   >
                     <div className="relative mb-3">
                       {imageErrors[song.id] ? (
@@ -627,12 +631,14 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
                         <img
                           src={getCoverForSong(song)}
                           alt={song.title}
-                          className="w-full aspect-square object-cover rounded-2xl group-hover:scale-105 transition-transform duration-200"
+                          loading="lazy"
+                          decoding="async"
+                          className="w-full aspect-square object-cover song-cover rounded-2xl group-hover:scale-105 transition-transform duration-200"
                           onError={() => handleImageError(song.id)}
                         />
                       )}
-                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-2xl flex items-center justify-center backdrop-blur-sm" style={{ backgroundColor: 'rgba(0, 0, 0, 0.4)' }}>
-                        <div className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg backdrop-blur-md transition-all duration-200 group-hover:bg-opacity-22" style={{ backgroundColor: 'rgba(255, 255, 255, 0.14)', border: '1px solid rgba(255, 255, 255, 0.25)' }}>
+                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-2xl flex items-center justify-center backdrop-blur-sm mobile-lite-blur" style={{ backgroundColor: 'rgba(0, 0, 0, 0.4)' }}>
+                        <div className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg backdrop-blur-md mobile-lite-blur transition-all duration-200 group-hover:bg-opacity-22" style={{ backgroundColor: 'rgba(255, 255, 255, 0.14)', border: '1px solid rgba(255, 255, 255, 0.25)' }}>
                           <Play size={20} fill="white" className="text-white ml-0.5" />
                         </div>
                       </div>
@@ -881,6 +887,51 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
             {/* Playback Section */}
             <div className="backdrop-blur-xl rounded-2xl p-[18px] mb-5 border w-full" style={{ backgroundColor: isLightMode ? '#FFFFFF' : 'rgba(255, 255, 255, 0.035)', borderColor: isLightMode ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.06)' }}>
               <h3 className="text-lg font-semibold mb-4" style={{ color: isLightMode ? '#111111' : '#FFFFFF', fontSize: '17px' }}>Playback</h3>
+
+              {/* Pause Fade Selector */}
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-3 gap-4">
+                  <div>
+                    <p className="text-sm font-medium" style={{ color: isLightMode ? '#111111' : '#FFFFFF' }}>Pause Fade</p>
+                    <p className="text-xs" style={{ color: isLightMode ? '#6E6E73' : '#A1A1AA' }}>Smoothly lowers volume before pausing.</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-4 gap-2">
+                  {[
+                    ['off', 'Off'],
+                    ['short', 'Short'],
+                    ['medium', 'Medium'],
+                    ['long', 'Long']
+                  ].map(([mode, label]) => {
+                    const isSelected = pauseFadeMode === mode
+
+                    return (
+                      <button
+                        key={mode}
+                        onClick={() => {
+                          setPauseFadeMode(mode)
+                          localStorage.setItem('aura_pause_fade_duration', mode)
+                          hapticSelection()
+                        }}
+                        className="px-3 py-2 rounded-lg border transition-all text-sm"
+                        style={{
+                          borderColor: isSelected
+                            ? (isLightMode ? 'rgba(0, 0, 0, 0.18)' : 'rgba(255, 255, 255, 0.18)')
+                            : (isLightMode ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.06)'),
+                          backgroundColor: isSelected
+                            ? (isLightMode ? '#F5F5F7' : 'rgba(255, 255, 255, 0.08)')
+                            : (isLightMode ? '#FFFFFF' : 'rgba(255, 255, 255, 0.035)'),
+                          color: isSelected
+                            ? (isLightMode ? '#111111' : '#FFFFFF')
+                            : (isLightMode ? '#6E6E73' : '#A1A1AA')
+                        }}
+                      >
+                        {label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
               
               {/* Autoplay Toggle */}
               <div className="flex items-center justify-between mb-4">
@@ -1160,7 +1211,7 @@ function SongList({ songs, onPlay, currentSong, addToPlaylist, playlist, addToQu
           <div
             key={song.id}
             onClick={() => onPlay(song)}
-            className={`flex items-center gap-3 p-3 border-b last:border-b-0 cursor-pointer transition-colors group ${
+            className={`flex items-center gap-3 p-3 border-b last:border-b-0 cursor-pointer transition-colors group song-card ${
               currentSong?.id === song.id ? '' : ''
             }`}
             style={{
@@ -1182,7 +1233,8 @@ function SongList({ songs, onPlay, currentSong, addToPlaylist, playlist, addToQu
                 src={getCoverForSong(song)}
                 alt={song.title}
                 loading="lazy"
-                className="w-12 h-12 rounded object-cover flex-shrink-0"
+                decoding="async"
+                className="w-12 h-12 rounded object-cover song-cover flex-shrink-0"
                 onError={() => handleImageError(song.id)}
               />
             )}
@@ -1203,7 +1255,7 @@ function SongList({ songs, onPlay, currentSong, addToPlaylist, playlist, addToQu
                   toggleFavorite(song)
                   hapticSuccess()
                 }}
-                className={`p-2 rounded-full transition-colors`}
+                className={`p-2 rounded-full transition-colors mobile-action`}
                 style={{
                   color: favoriteIds.has(song.id || song.title) ? '#FF3B30' : currentTheme.textMuted,
                   backgroundColor: 'transparent'
@@ -1218,7 +1270,7 @@ function SongList({ songs, onPlay, currentSong, addToPlaylist, playlist, addToQu
                   addToQueue(song)
                   hapticLight()
                 }}
-                className={`p-2 rounded-full transition-colors ${
+                className={`p-2 rounded-full transition-colors mobile-action ${
                   queueIds.has(song.id) ? '' : ''
                 }`}
                 style={{
@@ -1235,7 +1287,7 @@ function SongList({ songs, onPlay, currentSong, addToPlaylist, playlist, addToQu
                   addToPlaylist(song)
                   hapticSuccess()
                 }}
-                className={`p-2 rounded-full transition-colors ${
+                className={`p-2 rounded-full transition-colors mobile-action ${
                   playlistIds.has(song.id) ? '' : ''
                 }`}
                 style={{
@@ -1295,7 +1347,8 @@ function SongList({ songs, onPlay, currentSong, addToPlaylist, playlist, addToQu
                       src={getCoverForSong(song)}
                       alt={song.title}
                       loading="lazy"
-                      className="w-8 h-8 rounded object-cover group-hover:scale-103 group-hover:-translate-y-0.5 transition-all duration-200"
+                      decoding="async"
+                      className="w-8 h-8 rounded object-cover song-cover group-hover:scale-103 group-hover:-translate-y-0.5 transition-all duration-200"
                       onError={() => handleImageError(song.id)}
                     />
                   )}
@@ -1400,7 +1453,8 @@ function QueueList({ songs, onPlay, removeFromQueue, imageErrors, handleImageErr
                       src={getCoverForSong(song)}
                       alt={song.title}
                       loading="lazy"
-                      className="w-8 h-8 rounded object-cover group-hover:scale-103 group-hover:-translate-y-0.5 transition-all duration-200"
+                      decoding="async"
+                      className="w-8 h-8 rounded object-cover song-cover group-hover:scale-103 group-hover:-translate-y-0.5 transition-all duration-200"
                       onError={() => handleImageError(song.id)}
                     />
                   )}

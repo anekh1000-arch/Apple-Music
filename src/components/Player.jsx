@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { memo, useEffect, useState } from 'react'
 import { Play, Pause, SkipBack, SkipForward, Volume2, AlertCircle } from 'lucide-react'
 import { hapticLight, hapticMedium } from '../lib/haptics'
 import { getCoverForSong } from '../utils/covers'
@@ -114,7 +114,7 @@ function Player({ currentSong, isPlaying, progress, setProgress, onPlay, onPause
         }
       `}</style>
       <div 
-        className="fixed bottom-16 md:bottom-0 left-0 right-0 backdrop-blur-xl px-4 py-3 md:py-3 z-20"
+        className="fixed bottom-16 md:bottom-0 left-0 right-0 backdrop-blur-xl mobile-lite-blur px-4 py-3 md:py-3 z-20"
         style={{
           backgroundColor: isLightMode ? 'rgba(255, 255, 255, 0.94)' : 'rgba(5, 5, 5, 0.94)',
           borderTop: isLightMode ? '1px solid rgba(0, 0, 0, 0.06)' : '1px solid rgba(255, 255, 255, 0.06)',
@@ -148,7 +148,8 @@ function Player({ currentSong, isPlaying, progress, setProgress, onPlay, onPause
               <img
                 src={getCoverForSong(currentSong)}
                 alt={currentSong.title}
-                className="w-12 h-12 md:w-14 md:h-14 rounded-xl object-cover shadow-lg transition-all duration-300"
+                className="w-12 h-12 md:w-14 md:h-14 rounded-xl object-cover song-cover shadow-lg transition-all duration-300"
+                decoding="async"
                 style={{ opacity: isTransitioning ? 0.5 : 1, transform: isTransitioning ? 'scale(0.95)' : 'scale(1)' }}
                 onError={() => setImageError(true)}
               />
@@ -171,7 +172,7 @@ function Player({ currentSong, isPlaying, progress, setProgress, onPlay, onPause
                 onPrevious()
                 hapticMedium()
               }}
-              className="transition-colors p-1.5 md:p-2"
+              className="transition-colors p-1.5 md:p-2 mobile-action"
               style={{ color: currentTheme.textMuted }}
             >
               <SkipBack size={18} md:size={20} />
@@ -182,18 +183,18 @@ function Player({ currentSong, isPlaying, progress, setProgress, onPlay, onPause
                 isPlaying ? onPause() : onPlay(currentSong)
                 hapticLight()
               }}
-              className="w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all duration-150 shadow-lg active:scale-95 flex-shrink-0"
+              className="w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center active:scale-[0.97] flex-shrink-0 mobile-action"
               style={{
-                backgroundColor: isMidnightBlack ? contrastColors.playBg : currentTheme.accent,
-                boxShadow: isMidnightBlack
-                  ? `0 0 20px ${contrastColors.playBg}66, 0 4px 12px ${isLightMode ? 'rgba(0, 0, 0, 0.15)' : 'rgba(0, 0, 0, 0.3)'}`
-                  : `0 0 20px ${currentTheme.accent}66, 0 4px 12px ${isLightMode ? 'rgba(0, 0, 0, 0.15)' : 'rgba(0, 0, 0, 0.3)'}`
+                backgroundColor: isLightMode ? '#111111' : '#FFFFFF',
+                color: isLightMode ? '#FFFFFF' : '#000000',
+                boxShadow: isLightMode ? '0 8px 22px rgba(0, 0, 0, 0.18)' : '0 8px 24px rgba(0, 0, 0, 0.32)',
+                transition: 'transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease'
               }}
             >
               {isPlaying ? (
-                <Pause size={16} md:size={20} style={{ color: isMidnightBlack ? contrastColors.playIcon : (isLightMode ? '#000000' : '#FFFFFF') }} transition-all duration-150 />
+                <Pause size={16} md:size={20} style={{ color: isLightMode ? '#FFFFFF' : '#000000' }} transition-all duration-150 />
               ) : (
-                <Play size={16} md:size={20} style={{ color: isMidnightBlack ? contrastColors.playIcon : (isLightMode ? '#000000' : '#FFFFFF'), marginLeft: '2px' }} transition-all duration-150 />
+                <Play size={16} md:size={20} style={{ color: isLightMode ? '#FFFFFF' : '#000000', marginLeft: '2px' }} transition-all duration-150 />
               )}
             </button>
             <button
@@ -202,7 +203,7 @@ function Player({ currentSong, isPlaying, progress, setProgress, onPlay, onPause
                 onNext()
                 hapticMedium()
               }}
-              className="transition-colors p-1.5 md:p-2"
+              className="transition-colors p-1.5 md:p-2 mobile-action"
               style={{ color: currentTheme.textMuted }}
             >
               <SkipForward size={18} md:size={20} />
@@ -214,4 +215,4 @@ function Player({ currentSong, isPlaying, progress, setProgress, onPlay, onPause
   )
 }
 
-export default Player
+export default memo(Player)

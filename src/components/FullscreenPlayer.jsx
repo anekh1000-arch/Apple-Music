@@ -21,8 +21,8 @@ function FullscreenPlayer({ currentSong, isPlaying, progress, setProgress, onPla
   const isMidnightBlack = isMidnightBlackTheme && isMidnightBlackTheme(themeName)
   const contrastColors = isMidnightBlack ? getMidnightBlackContrast() : null
   
-  const dragThreshold = 120
-  const velocityThreshold = 600
+  const dragThreshold = 160
+  const velocityThreshold = 900
 
   useEffect(() => {
     if (currentSong) {
@@ -45,7 +45,7 @@ function FullscreenPlayer({ currentSong, isPlaying, progress, setProgress, onPla
     setTimeout(() => {
       onClose()
       setIsClosing(false)
-    }, 350)
+    }, 320)
   }
 
   const getSeekPercent = (clientX) => {
@@ -96,15 +96,14 @@ function FullscreenPlayer({ currentSong, isPlaying, progress, setProgress, onPla
   const setPlayerDragStyle = (offset) => {
     if (!playerRef.current) return
 
-    const dragProgress = Math.min(offset / dragThreshold, 1)
     playerRef.current.style.transform = `translateY(${offset}px)`
-    playerRef.current.style.opacity = `${1 - dragProgress * 0.22}`
+    playerRef.current.style.opacity = `${1 - Math.min(offset / 900, 0.18)}`
   }
 
   const resetPlayerDragStyle = () => {
     if (!playerRef.current) return
 
-    playerRef.current.style.transition = 'transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s cubic-bezier(0.22, 1, 0.36, 1)'
+    playerRef.current.style.transition = 'transform 280ms cubic-bezier(0.22, 1, 0.36, 1), opacity 220ms ease'
     playerRef.current.style.transform = 'translateY(0)'
     playerRef.current.style.opacity = '1'
   }
@@ -207,10 +206,10 @@ function FullscreenPlayer({ currentSong, isPlaying, progress, setProgress, onPla
         onPointerCancel={handlePlayerPointerUp}
         style={{
           backgroundColor: currentTheme.bg,
-          animation: isClosing ? 'slideDown 0.35s cubic-bezier(0.4, 0, 0.2, 1)' : 'slideUp 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
+          animation: isClosing ? 'slideDown 0.32s cubic-bezier(0.22, 1, 0.36, 1)' : 'slideUp 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
           transform: isClosing ? 'translateY(100%)' : 'translateY(0)',
           opacity: 1,
-          transition: 'transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s cubic-bezier(0.22, 1, 0.36, 1)',
+          transition: 'transform 320ms cubic-bezier(0.22, 1, 0.36, 1), opacity 220ms ease',
           touchAction: 'pan-y',
           overscrollBehavior: 'contain'
         }}
@@ -219,16 +218,15 @@ function FullscreenPlayer({ currentSong, isPlaying, progress, setProgress, onPla
       <div className="absolute inset-0 z-0">
         {(() => {
           const coverSrc = getCoverForSong(currentSong);
-          
-          console.log("FULL PLAYER BACKGROUND COVER:", coverSrc, currentSong);
-          
+
           return imageError ? (
             <div className="w-full h-full" style={{ backgroundColor: currentTheme.surfaceLight }} />
           ) : (
             <img
               src={coverSrc}
               alt=""
-              className="w-full h-full object-cover opacity-40 blur-3xl scale-125"
+              className="w-full h-full object-cover opacity-40 blur-3xl mobile-bg-blur scale-125"
+              decoding="async"
               onError={() => setImageError(true)}
             />
           );
@@ -250,7 +248,7 @@ function FullscreenPlayer({ currentSong, isPlaying, progress, setProgress, onPla
         {/* Close button */}
         <button
           onClick={handleClose}
-          className="absolute top-4 right-4 md:top-6 md:right-6 transition-all duration-150 active:scale-95"
+          className="absolute top-4 right-4 md:top-6 md:right-6 transition-all duration-150 active:scale-95 mobile-action"
           style={{ color: currentTheme.textMuted }}
         >
           <ChevronDown size={28} md:size={32} />
@@ -260,9 +258,7 @@ function FullscreenPlayer({ currentSong, isPlaying, progress, setProgress, onPla
         <div className="mb-6">
           {(() => {
             const coverSrc = getCoverForSong(currentSong);
-            
-            console.log("FULL PLAYER COVER:", coverSrc, currentSong);
-            
+
             return imageError ? (
               <div className="w-64 h-64 md:w-72 md:h-72 rounded-3xl flex items-center justify-center shadow-2xl transition-all duration-300" style={{ backgroundColor: currentTheme.surfaceLight, opacity: isTransitioning ? 0.5 : 1, transform: isTransitioning ? 'scale(0.95)' : 'scale(1)' }}>
                 <span className="text-lg" style={{ color: currentTheme.textMuted }}>No Cover</span>
@@ -271,15 +267,14 @@ function FullscreenPlayer({ currentSong, isPlaying, progress, setProgress, onPla
               <img
                 src={coverSrc}
                 alt={currentSong?.title || currentSong?.name || "Now playing"}
-                className="w-64 h-64 md:w-72 md:h-72 rounded-3xl shadow-2xl transition-all duration-300 hover:scale-105"
+                className={`full-player-cover ${isPlaying ? 'playing' : 'paused'} w-64 h-64 md:w-72 md:h-72 rounded-3xl`}
+                decoding="async"
                 style={{ 
                   objectFit: 'cover',
                   objectPosition: 'center',
                   aspectRatio: '1 / 1',
                   display: 'block',
-                  boxShadow: isLightMode ? '0 20px 40px -12px rgba(0, 0, 0, 0.2)' : '0 20px 40px -12px rgba(0, 0, 0, 0.5)', 
-                  opacity: isTransitioning ? 0.5 : 1, 
-                  transform: isTransitioning ? 'scale(0.95)' : 'scale(1)' 
+                  opacity: isTransitioning ? 0.5 : 1
                 }}
                 onError={(e) => {
                   e.currentTarget.src = "/covers/cover-01.jpg";
@@ -298,7 +293,7 @@ function FullscreenPlayer({ currentSong, isPlaying, progress, setProgress, onPla
                 toggleFavorite(currentSong)
                 hapticSuccess()
               }}
-              className="flex-shrink-0 transition-all duration-200 active:scale-95"
+              className="flex-shrink-0 transition-all duration-200 active:scale-95 mobile-action"
               style={{
                 width: '44px',
                 height: '44px',
@@ -371,7 +366,7 @@ function FullscreenPlayer({ currentSong, isPlaying, progress, setProgress, onPla
               onPrevious()
               hapticMedium()
             }}
-            className="transition-all duration-150 active:scale-90 p-2"
+            className="transition-all duration-150 active:scale-90 p-2 mobile-action"
             style={{ minWidth: '44px', minHeight: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: currentTheme.textMuted }}
           >
             <SkipBack size={22} md:size={26} />
@@ -381,18 +376,18 @@ function FullscreenPlayer({ currentSong, isPlaying, progress, setProgress, onPla
               isPlaying ? onPause() : onPlay(currentSong)
               hapticLight()
             }}
-            className="w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center transition-all duration-150 shadow-2xl active:scale-95"
+            className="w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center active:scale-[0.97] mobile-action"
             style={{
-              backgroundColor: isMidnightBlack ? contrastColors.playBg : currentTheme.accent,
-              boxShadow: isMidnightBlack
-                ? `0 0 15px ${contrastColors.playBg}66, 0 3px 8px ${isLightMode ? 'rgba(0, 0, 0, 0.15)' : 'rgba(0, 0, 0, 0.3)'}`
-                : `0 0 15px ${currentTheme.accent}66, 0 3px 8px ${isLightMode ? 'rgba(0, 0, 0, 0.15)' : 'rgba(0, 0, 0, 0.3)'}`
+              backgroundColor: isLightMode ? '#111111' : '#FFFFFF',
+              color: isLightMode ? '#FFFFFF' : '#000000',
+              boxShadow: isLightMode ? '0 8px 22px rgba(0, 0, 0, 0.18)' : '0 8px 24px rgba(0, 0, 0, 0.32)',
+              transition: 'transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease'
             }}
           >
             {isPlaying ? (
-              <Pause size={18} md:size={22} style={{ color: isMidnightBlack ? contrastColors.playIcon : (isLightMode ? '#000000' : '#FFFFFF') }} transition-all duration-150 />
+              <Pause size={18} md:size={22} style={{ color: isLightMode ? '#FFFFFF' : '#000000' }} transition-all duration-150 />
             ) : (
-              <Play size={18} md:size={22} style={{ color: isMidnightBlack ? contrastColors.playIcon : (isLightMode ? '#000000' : '#FFFFFF'), marginLeft: '2px' }} transition-all duration-150 />
+              <Play size={18} md:size={22} style={{ color: isLightMode ? '#FFFFFF' : '#000000', marginLeft: '2px' }} transition-all duration-150 />
             )}
           </button>
           <button
@@ -400,7 +395,7 @@ function FullscreenPlayer({ currentSong, isPlaying, progress, setProgress, onPla
               onNext()
               hapticMedium()
             }}
-            className="transition-all duration-150 active:scale-90 p-2"
+            className="transition-all duration-150 active:scale-90 p-2 mobile-action"
             style={{ minWidth: '44px', minHeight: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: currentTheme.textMuted }}
           >
             <SkipForward size={22} md:size={26} />
