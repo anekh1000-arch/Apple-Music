@@ -234,7 +234,7 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
     switch (view) {
       case 'home':
         return (
-          <div className="w-full md:px-0 px-4" style={{ backgroundColor: isLightMode ? '#FFFFFF' : '#050505', minHeight: '100vh', paddingBottom: '180px' }}>
+          <div className="w-full md:px-0 px-4" style={{ backgroundColor: isLightMode ? '#FFFFFF' : 'transparent', minHeight: '100vh', paddingBottom: '180px' }}>
             {/* Mobile Header */}
             <div className="md:hidden mb-6 pt-4">
               <h1 className="text-2xl font-bold mb-1" style={{ color: isLightMode ? '#111111' : '#FFFFFF' }}>
