@@ -86,13 +86,69 @@ function App() {
   const [view, setView] = useState('home')
   const [searchQuery, setSearchQuery] = useState('')
   const [playlist, setPlaylist] = useState([])
-  const [queue, setQueue] = useState([])
+  const [queue, setQueue] = useState(() => {
+    const saved = localStorage.getItem('musicQueue')
+    return saved ? JSON.parse(saved) : []
+  })
   const [recentlyPlayed, setRecentlyPlayed] = useState([])
   const [showFullscreenPlayer, setShowFullscreenPlayer] = useState(false)
   const [showSplash, setShowSplash] = useState(true)
   const [slideDirection, setSlideDirection] = useState(null)
   const [isAnimating, setIsAnimating] = useState(false)
   const [dominantColor, setDominantColor] = useState('#000000')
+  const [favoriteSongs, setFavoriteSongs] = useState(() => {
+    const saved = localStorage.getItem('favoriteSongs')
+    return saved ? JSON.parse(saved) : []
+  })
+  const [sleepTimer, setSleepTimer] = useState('off')
+
+  // Sleep timer logic
+  useEffect(() => {
+    let timerId = null
+
+    if (sleepTimer === 'off') {
+      // Clear any existing timer
+      return
+    }
+
+    if (sleepTimer === 'end-of-song') {
+      // Handle end of song - pause when song ends
+      const handleEnded = () => {
+        if (isPlaying) {
+          setIsPlaying(false)
+          setSleepTimer('off')
+        }
+      }
+
+      const audio = audioRef.current
+      if (audio) {
+        audio.addEventListener('ended', handleEnded)
+        return () => audio.removeEventListener('ended', handleEnded)
+      }
+    } else {
+      // Handle time-based timers
+      const timerDurations = {
+        '15min': 15 * 60 * 1000,
+        '30min': 30 * 60 * 1000,
+        '45min': 45 * 60 * 1000,
+        '1hour': 60 * 60 * 1000
+      }
+
+      const duration = timerDurations[sleepTimer]
+      if (duration) {
+        timerId = setTimeout(() => {
+          setIsPlaying(false)
+          setSleepTimer('off')
+        }, duration)
+      }
+    }
+
+    return () => {
+      if (timerId) {
+        clearTimeout(timerId)
+      }
+    }
+  }, [sleepTimer, isPlaying])
   
   // Swipe detection refs
   const touchStartX = useRef(0)
@@ -557,21 +613,42 @@ function App() {
 
   const addToQueue = (song) => {
     if (!queue.find(s => s.id === song.id)) {
-      setQueue([...queue, song])
+      const updatedQueue = [...queue, song]
+      setQueue(updatedQueue)
+      localStorage.setItem('musicQueue', JSON.stringify(updatedQueue))
     }
   }
 
   const removeFromQueue = (songId) => {
-    setQueue(queue.filter(s => s.id !== songId))
+    const updatedQueue = queue.filter(s => s.id !== songId)
+    setQueue(updatedQueue)
+    localStorage.setItem('musicQueue', JSON.stringify(updatedQueue))
   }
 
   const playFromQueue = (song) => {
     setCurrentSong(song)
-    setQueue(queue.filter(s => s.id !== song.id))
+    const updatedQueue = queue.filter(s => s.id !== song.id)
+    setQueue(updatedQueue)
+    localStorage.setItem('musicQueue', JSON.stringify(updatedQueue))
     setIsPlaying(true)
     setProgress(0)
     setCurrentTime(0)
     setDuration(0)
+  }
+
+  const toggleFavorite = (song) => {
+    const songId = song.id || song.title
+    const isFavorite = favoriteSongs.includes(songId)
+    let updatedFavorites
+
+    if (isFavorite) {
+      updatedFavorites = favoriteSongs.filter(id => id !== songId)
+    } else {
+      updatedFavorites = [...favoriteSongs, songId]
+    }
+
+    setFavoriteSongs(updatedFavorites)
+    localStorage.setItem('favoriteSongs', JSON.stringify(updatedFavorites))
   }
 
   // Save playback session to localStorage
@@ -828,6 +905,10 @@ function App() {
           onAppearanceChange={handleAppearanceChange}
           hapticFeedbackEnabled={hapticFeedbackEnabled}
           setHapticFeedbackEnabled={setHapticFeedbackEnabled}
+          favoriteSongs={favoriteSongs}
+          toggleFavorite={toggleFavorite}
+          sleepTimer={sleepTimer}
+          setSleepTimer={setSleepTimer}
         />
       </div>
       

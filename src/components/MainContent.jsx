@@ -1,9 +1,9 @@
 import { useState, useMemo, useEffect } from 'react'
-import { Play, Plus, Clock, ListPlus } from 'lucide-react'
+import { Play, Plus, Clock, ListPlus, Heart } from 'lucide-react'
 import { hapticLight, hapticMedium, hapticSuccess, hapticSelection } from '../lib/haptics'
 import { getDailyPick, getDailyRecommendations } from '../lib/dailyPick'
 
-function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, addToPlaylist, playlist, queue, addToQueue, removeFromQueue, playFromQueue, recentlyPlayed, songs, loading, error, onOpenFullscreen, listeningStats, favoriteArtist, favoriteAlbum, theme, currentTheme, onThemeChange, themes, slideDirection, isAnimating, isLightMode, onAppearanceChange, hapticFeedbackEnabled, setHapticFeedbackEnabled }) {
+function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, addToPlaylist, playlist, queue, addToQueue, removeFromQueue, playFromQueue, recentlyPlayed, songs, loading, error, onOpenFullscreen, listeningStats, favoriteArtist, favoriteAlbum, theme, currentTheme, onThemeChange, themes, slideDirection, isAnimating, isLightMode, onAppearanceChange, hapticFeedbackEnabled, setHapticFeedbackEnabled, favoriteSongs, toggleFavorite, sleepTimer, setSleepTimer }) {
   const filteredSongs = songs.filter(song =>
     song.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     song.artist.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -520,7 +520,7 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
             />
             {searchQuery ? (
               <div className="mt-6">
-                <SongList songs={filteredSongs} onPlay={onPlay} currentSong={currentSong} addToPlaylist={addToPlaylist} playlist={playlist} addToQueue={addToQueue} queue={queue} imageErrors={imageErrors} handleImageError={handleImageError} currentTheme={currentTheme} isLightMode={isLightMode} />
+                <SongList songs={filteredSongs} onPlay={onPlay} currentSong={currentSong} addToPlaylist={addToPlaylist} playlist={playlist} addToQueue={addToQueue} queue={queue} imageErrors={imageErrors} handleImageError={handleImageError} currentTheme={currentTheme} isLightMode={isLightMode} favoriteSongs={favoriteSongs} toggleFavorite={toggleFavorite} />
               </div>
             ) : (
               <div className="text-center py-20" style={{ color: currentTheme.textMuted }}>
@@ -534,7 +534,7 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
           <div className="w-full">
             <h2 className="text-2xl font-semibold mb-2" style={{ color: currentTheme.text }}>Your Library</h2>
             <p className="mb-6 text-sm" style={{ color: currentTheme.textMuted }}>Your personal music collection</p>
-            <SongList songs={songs} onPlay={onPlay} currentSong={currentSong} addToPlaylist={addToPlaylist} playlist={playlist} addToQueue={addToQueue} queue={queue} imageErrors={imageErrors} handleImageError={handleImageError} currentTheme={currentTheme} isLightMode={isLightMode} />
+            <SongList songs={songs} onPlay={onPlay} currentSong={currentSong} addToPlaylist={addToPlaylist} playlist={playlist} addToQueue={addToQueue} queue={queue} imageErrors={imageErrors} handleImageError={handleImageError} currentTheme={currentTheme} isLightMode={isLightMode} favoriteSongs={favoriteSongs} toggleFavorite={toggleFavorite} />
           </div>
         )
       case 'queue':
@@ -552,11 +552,19 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
           </div>
         )
       case 'favorites':
+        const favoriteSongsList = songs.filter(song => favoriteSongs.includes(song.id || song.title))
         return (
           <div className="w-full">
             <h2 className="text-2xl font-semibold mb-2" style={{ color: currentTheme.text }}>Favorites</h2>
             <p className="mb-6 text-sm" style={{ color: currentTheme.textMuted }}>Your favorite tracks</p>
-            <SongList songs={songs} onPlay={onPlay} currentSong={currentSong} addToPlaylist={addToPlaylist} playlist={playlist} addToQueue={addToQueue} queue={queue} imageErrors={imageErrors} handleImageError={handleImageError} currentTheme={currentTheme} isLightMode={isLightMode} />
+            {favoriteSongsList.length > 0 ? (
+              <SongList songs={favoriteSongsList} onPlay={onPlay} currentSong={currentSong} addToPlaylist={addToPlaylist} playlist={playlist} addToQueue={addToQueue} queue={queue} imageErrors={imageErrors} handleImageError={handleImageError} currentTheme={currentTheme} isLightMode={isLightMode} favoriteSongs={favoriteSongs} toggleFavorite={toggleFavorite} />
+            ) : (
+              <div className="text-center py-20" style={{ color: currentTheme.textMuted }}>
+                <p className="text-sm mb-2">No favorites yet</p>
+                <p className="text-xs">Tap the heart on songs you love.</p>
+              </div>
+            )}
           </div>
         )
       case 'settings':
@@ -814,6 +822,38 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
                 </button>
               </div>
 
+              {/* Sleep Timer */}
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <p className="text-sm font-medium" style={{ color: isLightMode ? '#111111' : '#FFFFFF' }}>Sleep Timer</p>
+                    <p className="text-xs" style={{ color: isLightMode ? '#6E6E73' : '#A1A1AA' }}>
+                      {sleepTimer === 'off' ? 'Pause playback after set time' : `Sleep timer: ${sleepTimer === '15min' ? '15 min' : sleepTimer === '30min' ? '30 min' : sleepTimer === '45min' ? '45 min' : sleepTimer === '1hour' ? '1 hour' : 'End of song'}`}
+                    </p>
+                  </div>
+                </div>
+                <select
+                  value={sleepTimer}
+                  onChange={(e) => {
+                    setSleepTimer(e.target.value)
+                    hapticSelection()
+                  }}
+                  className="w-full px-4 py-2 rounded-lg border focus:outline-none transition-colors text-sm"
+                  style={{
+                    backgroundColor: currentTheme.surfaceLight,
+                    borderColor: currentTheme.border,
+                    color: currentTheme.text
+                  }}
+                >
+                  <option value="off">Off</option>
+                  <option value="15min">15 minutes</option>
+                  <option value="30min">30 minutes</option>
+                  <option value="45min">45 minutes</option>
+                  <option value="1hour">1 hour</option>
+                  <option value="end-of-song">End of current song</option>
+                </select>
+              </div>
+
               {/* Haptic Feedback Toggle */}
               <div className="flex items-center justify-between">
                 <div>
@@ -899,10 +939,11 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
   )
 }
 
-function SongList({ songs, onPlay, currentSong, addToPlaylist, playlist, addToQueue, queue, imageErrors, handleImageError, currentTheme, isLightMode }) {
+function SongList({ songs, onPlay, currentSong, addToPlaylist, playlist, addToQueue, queue, imageErrors, handleImageError, currentTheme, isLightMode, favoriteSongs, toggleFavorite }) {
   // Memoize queue and playlist lookups to avoid O(n) operations on every render
   const queueIds = useMemo(() => new Set(queue.map(s => s.id)), [queue])
   const playlistIds = useMemo(() => new Set(playlist.map(s => s.id)), [playlist])
+  const favoriteIds = useMemo(() => new Set(favoriteSongs || []), [favoriteSongs])
 
   return (
     <div className="backdrop-blur-xl rounded-xl overflow-hidden border w-full" style={{ backgroundColor: `${currentTheme.surfaceLight}99`, borderColor: currentTheme.border }}>
@@ -949,6 +990,21 @@ function SongList({ songs, onPlay, currentSong, addToPlaylist, playlist, addToQu
             
             {/* Actions */}
             <div className="flex items-center gap-2">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  toggleFavorite(song)
+                  hapticSuccess()
+                }}
+                className={`p-2 rounded-full transition-colors`}
+                style={{
+                  color: favoriteIds.has(song.id || song.title) ? '#FF3B30' : currentTheme.textMuted,
+                  backgroundColor: 'transparent'
+                }}
+                title="Favorite"
+              >
+                <Heart size={18} fill={favoriteIds.has(song.id || song.title) ? '#FF3B30' : 'none'} />
+              </button>
               <button
                 onClick={(e) => {
                   e.stopPropagation()
@@ -1047,6 +1103,18 @@ function SongList({ songs, onPlay, currentSong, addToPlaylist, playlist, addToQu
               <td className="px-3 py-2 hidden lg:table-cell text-xs" style={{ color: currentTheme.textMuted }}>{song.duration}</td>
               <td className="px-3 py-2">
                 <div className="flex items-center gap-1">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      toggleFavorite(song)
+                      hapticSuccess()
+                    }}
+                    className={`p-1 rounded transition-colors opacity-0 group-hover:opacity-100`}
+                    style={{ color: favoriteIds.has(song.id || song.title) ? '#FF3B30' : currentTheme.textMuted }}
+                    title="Favorite"
+                  >
+                    <Heart size={16} fill={favoriteIds.has(song.id || song.title) ? '#FF3B30' : 'none'} />
+                  </button>
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
