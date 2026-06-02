@@ -264,9 +264,7 @@ function App() {
     '/covers/cover-05.jpg',
     '/covers/cover-06.jpg',
     '/covers/cover-07.jpg',
-    '/covers/cover-08.jpg',
-    '/covers/cover-09.jpg',
-    '/covers/cover-10.jpg'
+    '/covers/cover-08.jpg'
   ]
 
   // Simple index-based cover assignment for consistent repeating pattern
