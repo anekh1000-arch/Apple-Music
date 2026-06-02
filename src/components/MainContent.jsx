@@ -258,16 +258,16 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
                   style={{
                     background: isLightMode 
                       ? 'linear-gradient(135deg, #F5F5F7 0%, #E5E7EB 100%)'
-                      : 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
+                      : 'linear-gradient(135deg, #1B1B2F 0%, #252545 45%, #141421 100%)',
                     borderColor: isLightMode ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.08)',
-                    boxShadow: isLightMode ? '0 4px 20px rgba(0, 0, 0, 0.08)' : '0 4px 20px rgba(139, 92, 246, 0.15)'
+                    boxShadow: isLightMode ? '0 4px 20px rgba(0, 0, 0, 0.08)' : '0 20px 50px rgba(0, 0, 0, 0.35)'
                   }}
                   className={`relative backdrop-blur-xl rounded-3xl overflow-hidden cursor-pointer group hover:scale-[1.02] hover:-translate-y-1 transition-all duration-200 border ${isFeaturedTransitioning ? 'opacity-0' : 'opacity-100'}`}
                 >
                   {/* Mobile Layout */}
                   <div className="md:hidden flex flex-col p-5">
                     {/* Label */}
-                    <p className="text-xs font-semibold mb-3 tracking-wider" style={{ color: isLightMode ? '#6E6E73' : '#8B5CF6' }}>FEATURED ALBUM</p>
+                    <p className="text-xs font-semibold mb-3 tracking-wider" style={{ color: isLightMode ? '#6E6E73' : '#A1A1AA' }}>FEATURED ALBUM</p>
                     
                     <div className="flex items-center gap-4">
                       {/* Cover */}
@@ -333,7 +333,7 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
                       />
                     )}
                     <div className="flex-1">
-                      <p style={{ color: isLightMode ? '#6E6E73' : '#8B5CF6' }} className="text-xs uppercase tracking-wider mb-2">{timePeriod === 'morning' ? 'Morning Pick' : 'Evening Pick'}</p>
+                      <p style={{ color: isLightMode ? '#6E6E73' : '#A1A1AA' }} className="text-xs uppercase tracking-wider mb-2">{timePeriod === 'morning' ? 'Morning Pick' : 'Evening Pick'}</p>
                       <h2 style={{ color: isLightMode ? '#111111' : '#FFFFFF' }} className="text-2xl font-bold mb-1 transition-colors">{featuredSong.title}</h2>
                       {featuredSong.artist && featuredSong.artist !== 'Unknown Artist' && (
                         <p style={{ color: isLightMode ? '#6E6E73' : '#A1A1AA' }} className="text-lg mb-2">{featuredSong.artist}</p>
@@ -386,7 +386,7 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
                           />
                         )}
                         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-2xl flex items-center justify-center backdrop-blur-sm" style={{ backgroundColor: 'rgba(0, 0, 0, 0.4)' }}>
-                          <div className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg" style={{ backgroundColor: '#8B5CF6' }}>
+                          <div className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg backdrop-blur-md transition-all duration-200 group-hover:bg-opacity-22" style={{ backgroundColor: 'rgba(255, 255, 255, 0.14)', border: '1px solid rgba(255, 255, 255, 0.25)' }}>
                             <Play size={20} fill="white" className="text-white ml-0.5" />
                           </div>
                         </div>
@@ -430,7 +430,7 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
                           />
                         )}
                         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-2xl flex items-center justify-center backdrop-blur-sm" style={{ backgroundColor: 'rgba(0, 0, 0, 0.4)' }}>
-                          <div className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg" style={{ backgroundColor: '#8B5CF6' }}>
+                          <div className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg backdrop-blur-md transition-all duration-200 group-hover:bg-opacity-22" style={{ backgroundColor: 'rgba(255, 255, 255, 0.14)', border: '1px solid rgba(255, 255, 255, 0.25)' }}>
                             <Play size={20} fill="white" className="text-white ml-0.5" />
                           </div>
                         </div>
@@ -473,7 +473,7 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
                         />
                       )}
                       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-2xl flex items-center justify-center backdrop-blur-sm" style={{ backgroundColor: 'rgba(0, 0, 0, 0.4)' }}>
-                        <div className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg" style={{ backgroundColor: '#8B5CF6' }}>
+                        <div className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg backdrop-blur-md transition-all duration-200 group-hover:bg-opacity-22" style={{ backgroundColor: 'rgba(255, 255, 255, 0.14)', border: '1px solid rgba(255, 255, 255, 0.25)' }}>
                           <Play size={20} fill="white" className="text-white ml-0.5" />
                         </div>
                       </div>
