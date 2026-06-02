@@ -362,7 +362,7 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
             {recommendedSongs.length > 0 && (
               <div className="mb-8">
                 <h2 className="text-lg font-semibold mb-4" style={{ color: isLightMode ? '#111111' : '#FFFFFF' }}>Daily Mix</h2>
-                <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
+                <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 pr-4 md:mx-0 md:px-0 md:pr-0">
                   {recommendedSongs.map((song, index) => (
                     <div
                       key={song.id}
@@ -406,7 +406,7 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
             {recentlyPlayed && recentlyPlayed.length > 0 && (
               <div className="mb-8">
                 <h2 className="text-lg font-semibold mb-4" style={{ color: isLightMode ? '#111111' : '#FFFFFF' }}>Recently Played</h2>
-                <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
+                <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 pr-4 md:mx-0 md:px-0 md:pr-0">
                   {recentlyPlayed.map((song, index) => (
                     <div
                       key={song.id}
@@ -449,7 +449,7 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
             {/* Recently Added Section */}
             <div className="mb-8">
               <h2 className="text-lg font-semibold mb-4" style={{ color: isLightMode ? '#111111' : '#FFFFFF' }}>Recently Added</h2>
-              <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
+              <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 pr-4 md:mx-0 md:px-0 md:pr-0">
                 {songs.map((song, index) => (
                   <div
                     key={song.id}
