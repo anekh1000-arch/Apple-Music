@@ -1,23 +1,28 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Play, Pause, SkipBack, SkipForward, AlertCircle, ChevronDown, Heart } from 'lucide-react'
 import { hapticLight, hapticMedium, hapticSelection, hapticSuccess } from '../lib/haptics'
 import { getCoverForSong } from '../utils/covers'
 
-function FullscreenPlayer({ currentSong, isPlaying, progress, setProgress, onPlay, onPause, onNext, onPrevious, onClose, currentTheme, currentTime, duration, onSeek, isLightMode, dominantColor, themeName, isMidnightBlackTheme, getMidnightBlackContrast, songs, favoriteSongs, toggleFavorite }) {
+function FullscreenPlayer({ currentSong, isPlaying, progress, setProgress, onPlay, onPause, onNext, onPrevious, onClose, currentTheme, currentTime, setCurrentTime, duration, onSeek, audioRef, isLightMode, dominantColor, themeName, isMidnightBlackTheme, getMidnightBlackContrast, songs, favoriteSongs, toggleFavorite }) {
   const [imageError, setImageError] = useState(false)
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [isClosing, setIsClosing] = useState(false)
+  const playerRef = useRef(null)
+  const progressRef = useRef(null)
+  const isSeekingRef = useRef(false)
+  const isDraggingRef = useRef(false)
+  const dragStartYRef = useRef(0)
+  const dragOffsetRef = useRef(0)
+  const dragLastYRef = useRef(0)
+  const dragLastTimeRef = useRef(0)
+  const dragVelocityRef = useRef(0)
 
   // Get contrast colors for Midnight Black theme
   const isMidnightBlack = isMidnightBlackTheme && isMidnightBlackTheme(themeName)
   const contrastColors = isMidnightBlack ? getMidnightBlackContrast() : null
   
-  // Swipe-down gesture state
-  const [touchStartY, setTouchStartY] = useState(0)
-  const [currentY, setCurrentY] = useState(0)
-  const [isDragging, setIsDragging] = useState(false)
-  const [dragOffset, setDragOffset] = useState(0)
-  const dragThreshold = 150 // pixels to trigger close
+  const dragThreshold = 120
+  const velocityThreshold = 600
 
   useEffect(() => {
     if (currentSong) {
@@ -43,47 +48,119 @@ function FullscreenPlayer({ currentSong, isPlaying, progress, setProgress, onPla
     }, 350)
   }
 
-  // Touch event handlers for swipe-down gesture
-  const handleTouchStart = (e) => {
-    setTouchStartY(e.touches[0].clientY)
-    setCurrentY(e.touches[0].clientY)
-    setIsDragging(true)
-    setDragOffset(0)
+  const getSeekPercent = (clientX) => {
+    if (!progressRef.current) return 0
+
+    const rect = progressRef.current.getBoundingClientRect()
+    return Math.min(Math.max((clientX - rect.left) / rect.width, 0), 1)
   }
 
-  const handleTouchMove = (e) => {
-    if (!isDragging) return
-    
-    const y = e.touches[0].clientY
-    setCurrentY(y)
-    const offset = y - touchStartY
-    
-    // Only allow downward drag
-    if (offset > 0) {
-      setDragOffset(offset)
+  const seekToClientX = (clientX) => {
+    const audio = audioRef?.current
+    const audioDuration = audio?.duration || duration
+    if (!audio || !Number.isFinite(audioDuration) || audioDuration <= 0) return
+
+    const percent = getSeekPercent(clientX)
+    const nextTime = percent * audioDuration
+
+    audio.currentTime = nextTime
+    setProgress(percent * 100)
+    if (setCurrentTime) {
+      setCurrentTime(nextTime)
     }
   }
 
-  const handleTouchEnd = () => {
-    if (!isDragging) return
-    
-    setIsDragging(false)
-    
-    if (dragOffset > dragThreshold) {
-      // Close the player
+  const handleProgressPointerDown = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    isSeekingRef.current = true
+    e.currentTarget.setPointerCapture(e.pointerId)
+    seekToClientX(e.clientX)
+  }
+
+  const handleProgressPointerMove = (e) => {
+    if (!isSeekingRef.current) return
+    e.preventDefault()
+    seekToClientX(e.clientX)
+  }
+
+  const endProgressSeek = (e) => {
+    if (!isSeekingRef.current) return
+    e.preventDefault()
+    isSeekingRef.current = false
+    if (e.currentTarget.hasPointerCapture?.(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId)
+    }
+  }
+
+  const setPlayerDragStyle = (offset) => {
+    if (!playerRef.current) return
+
+    const dragProgress = Math.min(offset / dragThreshold, 1)
+    playerRef.current.style.transform = `translateY(${offset}px)`
+    playerRef.current.style.opacity = `${1 - dragProgress * 0.22}`
+  }
+
+  const resetPlayerDragStyle = () => {
+    if (!playerRef.current) return
+
+    playerRef.current.style.transition = 'transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s cubic-bezier(0.22, 1, 0.36, 1)'
+    playerRef.current.style.transform = 'translateY(0)'
+    playerRef.current.style.opacity = '1'
+  }
+
+  const handlePlayerPointerDown = (e) => {
+    if (isSeekingRef.current || e.target.closest('button, [data-progress-control]')) return
+
+    isDraggingRef.current = true
+    dragStartYRef.current = e.clientY
+    dragOffsetRef.current = 0
+    dragLastYRef.current = e.clientY
+    dragLastTimeRef.current = performance.now()
+    dragVelocityRef.current = 0
+    e.currentTarget.setPointerCapture(e.pointerId)
+
+    if (playerRef.current) {
+      playerRef.current.style.transition = 'none'
+    }
+  }
+
+  const handlePlayerPointerMove = (e) => {
+    if (!isDraggingRef.current || isSeekingRef.current) return
+
+    const now = performance.now()
+    const deltaTime = Math.max(now - dragLastTimeRef.current, 1)
+    const frameVelocity = ((e.clientY - dragLastYRef.current) / deltaTime) * 1000
+    const offset = Math.max(e.clientY - dragStartYRef.current, 0)
+
+    dragVelocityRef.current = frameVelocity
+    dragLastYRef.current = e.clientY
+    dragLastTimeRef.current = now
+    dragOffsetRef.current = offset
+
+    if (offset > 0) {
+      e.preventDefault()
+      setPlayerDragStyle(offset)
+    }
+  }
+
+  const handlePlayerPointerUp = (e) => {
+    if (!isDraggingRef.current) return
+
+    isDraggingRef.current = false
+
+    if (e.currentTarget.hasPointerCapture?.(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId)
+    }
+
+    if (dragOffsetRef.current > dragThreshold || dragVelocityRef.current > velocityThreshold) {
       handleClose()
     } else {
-      // Snap back
-      setDragOffset(0)
+      resetPlayerDragStyle()
     }
   }
 
   if (!currentSong) return null
-
-  // Calculate visual feedback during drag
-  const dragProgress = Math.min(dragOffset / dragThreshold, 1)
-  const scale = 1 - (dragProgress * 0.1) // Scale down to 0.9
-  const opacity = 1 - (dragProgress * 0.3) // Opacity down to 0.7
 
   // Apply dominant color tint for background glow
   const getGlowColor = () => {
@@ -122,17 +199,20 @@ function FullscreenPlayer({ currentSong, isPlaying, progress, setProgress, onPla
         }
       `}</style>
       <div 
+        ref={playerRef}
         className="fixed inset-0 z-50 flex flex-col"
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
+        onPointerDown={handlePlayerPointerDown}
+        onPointerMove={handlePlayerPointerMove}
+        onPointerUp={handlePlayerPointerUp}
+        onPointerCancel={handlePlayerPointerUp}
         style={{
           backgroundColor: currentTheme.bg,
           animation: isClosing ? 'slideDown 0.35s cubic-bezier(0.4, 0, 0.2, 1)' : 'slideUp 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
-          transform: isDragging ? `translateY(${dragOffset}px) scale(${scale})` : (isClosing ? 'translateY(100%)' : 'none'),
-          opacity: isDragging ? opacity : 1,
-          transition: isDragging ? 'none' : 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
-          touchAction: 'none' // Prevent default touch actions
+          transform: isClosing ? 'translateY(100%)' : 'translateY(0)',
+          opacity: 1,
+          transition: 'transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s cubic-bezier(0.22, 1, 0.36, 1)',
+          touchAction: 'pan-y',
+          overscrollBehavior: 'contain'
         }}
       >
       {/* Background with blur */}
@@ -251,18 +331,29 @@ function FullscreenPlayer({ currentSong, isPlaying, progress, setProgress, onPla
 
         {/* Progress Bar */}
         <div className="w-full max-w-2xl mb-3">
-          <input
-            type="range"
-            min="0"
-            max="100"
-            value={isNaN(progress) ? 0 : progress}
-            onChange={onSeek}
-            title=""
-            className="w-full h-2 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:hover:scale-125 [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:shadow-lg [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-runnable-track]:rounded-full"
-            style={{
-              background: `linear-gradient(to right, ${currentTheme.accent} 0%, ${currentTheme.accent} ${isNaN(progress) ? 0 : progress}%, ${currentTheme.border} ${isNaN(progress) ? 0 : progress}%, ${currentTheme.border} 100%)`
-            }}
-          />
+          <div
+            data-progress-control
+            className="progress-touch-area"
+            onPointerDown={handleProgressPointerDown}
+            onPointerMove={handleProgressPointerMove}
+            onPointerUp={endProgressSeek}
+            onPointerCancel={endProgressSeek}
+            style={{ touchAction: 'none' }}
+          >
+            <div
+              ref={progressRef}
+              className="progress-track"
+              style={{ backgroundColor: currentTheme.border }}
+            >
+              <div
+                className="h-full rounded-full"
+                style={{
+                  width: `${isNaN(progress) ? 0 : progress}%`,
+                  backgroundColor: currentTheme.accent
+                }}
+              />
+            </div>
+          </div>
           <div className="flex justify-between mt-2">
             <span className="text-xs md:text-sm" style={{ color: currentTheme.textMuted }}>
               {formatTime(currentTime)}

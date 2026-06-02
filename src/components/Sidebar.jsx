@@ -1,10 +1,19 @@
 import { Home, Search, Music, Heart, Settings, ListMusic } from 'lucide-react'
-import { useState } from 'react'
+import { memo, useState } from 'react'
 import { hapticSelection } from '../lib/haptics'
 import { getCoverForSong } from '../utils/covers'
 
+const MOBILE_MENU_ITEMS = [
+  { id: 'home', icon: Home, label: 'Home' },
+  { id: 'search', icon: Search, label: 'Search' },
+  { id: 'library', icon: Music, label: 'Library' },
+  { id: 'favorites', icon: Heart, label: 'Favorites' },
+  { id: 'settings', icon: Settings, label: 'Settings' },
+]
+
 function Sidebar({ view, setView, playlist, removeFromPlaylist, currentTheme, isLightMode, themeName, isMidnightBlackTheme, getMidnightBlackContrast }) {
   const [imageErrors, setImageErrors] = useState({})
+  const [hoveredDesktopItem, setHoveredDesktopItem] = useState(null)
 
   const handleImageError = (songId) => {
     setImageErrors(prev => ({ ...prev, [songId]: true }))
@@ -23,17 +32,6 @@ function Sidebar({ view, setView, playlist, removeFromPlaylist, currentTheme, is
   const isMidnightBlack = isMidnightBlackTheme && isMidnightBlackTheme(themeName)
   const contrastColors = isMidnightBlack ? getMidnightBlackContrast() : null
 
-  // Mobile bottom navigation
-  const mobileMenuItems = [
-    { id: 'home', icon: Home, label: 'Home' },
-    { id: 'search', icon: Search, label: 'Search' },
-    { id: 'library', icon: Music, label: 'Library' },
-    { id: 'favorites', icon: Heart, label: 'Favorites' },
-    { id: 'settings', icon: Settings, label: 'Settings' },
-  ]
-  const activeMobileIndex = Math.max(0, mobileMenuItems.findIndex(item => item.id === view))
-  const mobileNavTransition = 'all 0.22s cubic-bezier(0.22, 1, 0.36, 1)'
-
   return (
     <>
       {/* Desktop Sidebar */}
@@ -48,6 +46,13 @@ function Sidebar({ view, setView, playlist, removeFromPlaylist, currentTheme, is
           <ul className="space-y-1">
             {menuItems.map((item) => {
               const Icon = item.icon
+              const isActive = view === item.id
+              const isHovered = hoveredDesktopItem === item.id
+              const activeDesktopBg = isLightMode ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.10)'
+              const hoverDesktopBg = isLightMode ? 'rgba(0, 0, 0, 0.045)' : 'rgba(255, 255, 255, 0.075)'
+              const desktopItemColor = isActive
+                ? currentTheme.text
+                : currentTheme.textMuted
               return (
                 <li key={item.id}>
                   <button
@@ -55,27 +60,44 @@ function Sidebar({ view, setView, playlist, removeFromPlaylist, currentTheme, is
                       setView(item.id)
                       hapticSelection()
                     }}
-                        className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all ${
-                      view === item.id
-                        ? ''
-                        : ''
-                    }`}
+                    onMouseEnter={() => setHoveredDesktopItem(item.id)}
+                    onMouseLeave={() => setHoveredDesktopItem(null)}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg relative overflow-hidden"
                     style={{
-                      color: view === item.id
-                        ? (isMidnightBlack ? contrastColors.activeText : (isLightMode ? 'black' : 'white'))
-                        : currentTheme.textMuted,
-                      backgroundColor: view === item.id
-                        ? (isMidnightBlack ? contrastColors.activeBg : currentTheme.accent)
-                        : 'transparent',
-                      border: view === item.id && isMidnightBlack ? `1px solid ${contrastColors.activeBorder}` : 'none'
+                      color: desktopItemColor,
+                      backgroundColor: isActive ? activeDesktopBg : (isHovered ? hoverDesktopBg : 'transparent'),
+                      border: 'none',
+                      opacity: isActive ? 1 : 0.65,
+                      transform: isActive ? 'translateX(2px)' : (isHovered ? 'translateX(3px)' : 'translateX(0)'),
+                      transition: 'background-color 0.22s ease, color 0.22s ease, transform 0.18s ease, opacity 0.18s ease'
                     }}
                   >
-                    <Icon size={16} style={{ color: view === item.id
-                      ? (isMidnightBlack ? contrastColors.activeText : (isLightMode ? 'black' : 'white'))
-                      : currentTheme.textMuted }} />
-                    <span className="text-sm" style={{ color: view === item.id
-                      ? (isMidnightBlack ? contrastColors.activeText : (isLightMode ? 'black' : 'white'))
-                      : currentTheme.text }}>{item.label}</span>
+                    <span
+                      aria-hidden="true"
+                      style={{
+                        position: 'absolute',
+                        left: '6px',
+                        width: '3px',
+                        height: '22px',
+                        borderRadius: '999px',
+                        background: 'currentColor',
+                        opacity: isActive ? 0.9 : 0,
+                        transform: isActive ? 'translateX(0)' : 'translateX(-4px)',
+                        transition: 'transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease'
+                      }}
+                    />
+                    <Icon size={16} style={{
+                      color: desktopItemColor,
+                      opacity: isActive ? 1 : 0.9,
+                      transform: isHovered && !isActive ? 'translateX(1px)' : 'translateX(0)',
+                      transition: 'color 0.22s ease, opacity 0.22s ease, transform 0.18s ease'
+                    }} />
+                    <span className="text-sm" style={{
+                      color: desktopItemColor,
+                      opacity: isActive ? 1 : 0.95,
+                      transform: isHovered && !isActive ? 'translateX(1px)' : 'translateX(0)',
+                      transition: 'color 0.22s ease, opacity 0.22s ease, transform 0.18s ease'
+                    }}>{item.label}</span>
                   </button>
                 </li>
               )
@@ -121,67 +143,46 @@ function Sidebar({ view, setView, playlist, removeFromPlaylist, currentTheme, is
         )}
       </aside>
 
-      {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30" style={{ 
-        height: '64px', 
-        minHeight: '64px', 
-        paddingTop: '6px', 
-        paddingBottom: 'calc(6px + env(safe-area-inset-bottom))', 
-        backgroundColor: isLightMode ? 'rgba(255, 255, 255, 0.82)' : 'rgba(8, 8, 10, 0.82)', 
-        backdropFilter: 'blur(20px)', 
-        WebkitBackdropFilter: 'blur(20px)',
-        borderTop: isLightMode ? '1px solid rgba(0, 0, 0, 0.08)' : '1px solid rgba(255, 255, 255, 0.08)'
-      }}>
-        <div className="relative flex justify-around items-center px-2" style={{ height: '100%' }}>
-          <div
-            style={{
-              position: 'absolute',
-              top: '4px',
-              bottom: '4px',
-              left: '8px',
-              width: `calc((100% - 16px) / ${mobileMenuItems.length})`,
-              borderRadius: '18px',
-              background: isLightMode ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.10)',
-              transform: `translateX(${activeMobileIndex * 100}%)`,
-              transition: mobileNavTransition,
-              pointerEvents: 'none'
-            }}
-          />
-          {mobileMenuItems.map((item) => {
-            const Icon = item.icon
-            const isActive = view === item.id
-            return (
-              <button
-                key={item.id}
-                onClick={() => {
-                  setView(item.id)
-                  hapticSelection()
-                }}
-                className="flex flex-col items-center justify-center px-0 py-0 relative"
-                style={{
-                  flex: 1,
-                  height: '100%',
-                  minHeight: '44px',
-                  gap: '2px',
-                  color: isActive ? (isLightMode ? '#111111' : '#FFFFFF') : (isLightMode ? '#6E6E73' : '#8A8A93'),
-                  backgroundColor: 'transparent',
-                  padding: 0,
-                  margin: 0,
-                  opacity: isActive ? 1 : 0.6,
-                  fontWeight: isActive ? 650 : 500,
-                  transition: mobileNavTransition,
-                  zIndex: 1
-                }}
-              >
-                <Icon size={23} style={{ width: '23px', height: '23px', minWidth: '23px', minHeight: '23px', display: 'block', color: isActive ? (isLightMode ? '#111111' : '#FFFFFF') : (isLightMode ? '#6E6E73' : '#8A8A93'), transition: mobileNavTransition }} />
-                <span className="font-medium" style={{ fontSize: '11px', fontWeight: isActive ? 650 : 500, lineHeight: 1, marginTop: '0', color: isActive ? (isLightMode ? '#111111' : '#FFFFFF') : (isLightMode ? '#6E6E73' : '#8A8A93'), transition: mobileNavTransition }}>{item.label}</span>
-              </button>
-            )
-          })}
-        </div>
-      </nav>
+      <MobileBottomNav view={view} setView={setView} isLightMode={isLightMode} />
     </>
   )
 }
+
+const MobileBottomNav = memo(function MobileBottomNav({ view, setView, isLightMode }) {
+  return (
+    <nav className={`mobile-bottom-nav md:hidden fixed bottom-0 left-0 right-0 z-30 ${isLightMode ? '' : 'dark'}`}>
+      <div className="flex justify-around items-center px-2" style={{ height: '100%' }}>
+        {MOBILE_MENU_ITEMS.map((item) => {
+          const Icon = item.icon
+          const isActive = view === item.id
+          const itemColor = isActive
+            ? (isLightMode ? '#111111' : '#FFFFFF')
+            : (isLightMode ? '#6E6E73' : '#8A8A93')
+
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => {
+                if (view !== item.id) {
+                  setView(item.id)
+                }
+              }}
+              className={`nav-item flex flex-col items-center justify-center px-0 py-0 ${isActive ? 'active' : ''}`}
+              style={{
+                flex: 1,
+                gap: '2px',
+                color: itemColor
+              }}
+            >
+              <Icon className="nav-icon" size={23} style={{ display: 'block', color: itemColor }} />
+              <span className="nav-label" style={{ color: itemColor }}>{item.label}</span>
+            </button>
+          )
+        })}
+      </div>
+    </nav>
+  )
+})
 
 export default Sidebar

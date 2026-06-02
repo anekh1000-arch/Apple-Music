@@ -76,8 +76,9 @@ const getMidnightBlackContrast = () => {
 function App() {
   const audioRef = useRef(null)
   const fadeAnimationRef = useRef(null)
+  const isFadingRef = useRef(false)
   const manualAudioControlRef = useRef(null)
-  const preFadeVolumeRef = useRef(null)
+  const userVolumeRef = useRef(loadFromStorage(STORAGE_KEYS.volume, 1))
   const [songsData, setSongsData] = useState(songs)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -210,45 +211,101 @@ function App() {
   }
 
   const clampVolume = (value) => Math.max(0, Math.min(1, Number.isFinite(value) ? value : 1))
-  const FADE_DURATION = 350
+  const FADE_OUT_DURATION = 900
+  const FADE_IN_DURATION = 500
 
-  const cancelFade = useCallback((restoreVolume = false) => {
+  const cancelFade = useCallback(() => {
     if (fadeAnimationRef.current) {
       cancelAnimationFrame(fadeAnimationRef.current)
       fadeAnimationRef.current = null
     }
 
-    if (restoreVolume && audioRef.current && preFadeVolumeRef.current !== null) {
-      audioRef.current.volume = preFadeVolumeRef.current
-    }
-
-    preFadeVolumeRef.current = null
+    isFadingRef.current = false
   }, [])
 
-  const fadeVolume = useCallback((audio, from, to, duration, onComplete, restoreVolume = to) => {
+  const restoreUserVolume = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = clampVolume(userVolumeRef.current)
+    }
+  }, [])
+
+  const easeOutCubic = (t) => {
+    return 1 - Math.pow(1 - t, 3)
+  }
+
+  const fadeVolume = useCallback((audio, from, to, duration, onComplete) => {
     cancelFade()
 
+    isFadingRef.current = true
     const start = performance.now()
+    const startVolume = clampVolume(from)
     const targetVolume = clampVolume(to)
-    preFadeVolumeRef.current = clampVolume(restoreVolume)
 
     function step(now) {
-      const progress = Math.min((now - start) / duration, 1)
-      const nextVolume = from + (targetVolume - from) * progress
+      const rawProgress = Math.min((now - start) / duration, 1)
+      const easedProgress = easeOutCubic(rawProgress)
+      const nextVolume = startVolume + (targetVolume - startVolume) * easedProgress
 
       audio.volume = clampVolume(nextVolume)
 
-      if (progress < 1) {
+      if (rawProgress < 1) {
         fadeAnimationRef.current = requestAnimationFrame(step)
       } else {
         fadeAnimationRef.current = null
-        preFadeVolumeRef.current = null
+        isFadingRef.current = false
         if (onComplete) onComplete()
       }
     }
 
     fadeAnimationRef.current = requestAnimationFrame(step)
   }, [cancelFade])
+
+  const getSavedVolume = useCallback((audio) => {
+    if (!audio) return clampVolume(userVolumeRef.current)
+
+    if (!isFadingRef.current) {
+      userVolumeRef.current = clampVolume(audio.volume)
+    }
+
+    return clampVolume(userVolumeRef.current)
+  }, [])
+
+  const pauseWithFade = useCallback(() => {
+    const audio = audioRef.current
+    if (!audio) return
+
+    const savedVolume = getSavedVolume(audio)
+
+    manualAudioControlRef.current = 'pause'
+    fadeVolume(audio, audio.volume, 0, FADE_OUT_DURATION, () => {
+      audio.pause()
+      audio.volume = savedVolume
+    })
+
+    setIsPlaying(false)
+  }, [fadeVolume, getSavedVolume])
+
+  const playWithFade = useCallback(async () => {
+    const audio = audioRef.current
+    if (!audio) return
+
+    const fromVolume = isFadingRef.current ? clampVolume(audio.volume) : 0
+    const savedVolume = getSavedVolume(audio)
+
+    cancelFade()
+    manualAudioControlRef.current = 'play'
+    audio.volume = fromVolume
+
+    try {
+      await audio.play()
+      setIsPlaying(true)
+      fadeVolume(audio, fromVolume, savedVolume, FADE_IN_DURATION)
+    } catch (error) {
+      console.error('Audio play failed:', error)
+      audio.volume = savedVolume
+      setIsPlaying(false)
+    }
+  }, [cancelFade, fadeVolume, getSavedVolume])
 
   // Audio control
   useEffect(() => {
@@ -258,15 +315,16 @@ function App() {
         return
       }
 
-      cancelFade(true)
+      cancelFade()
 
       if (isPlaying) {
         audioRef.current.play()
       } else {
         audioRef.current.pause()
+        restoreUserVolume()
       }
     }
-  }, [isPlaying, currentSong, cancelFade])
+  }, [isPlaying, currentSong, cancelFade, restoreUserVolume])
 
   const handleSeek = (e) => {
     if (audioRef.current) {
@@ -469,28 +527,20 @@ function App() {
     const isSameSong = currentSong && song && (currentSong.id || currentSong.title) === (song.id || song.title)
     const shouldFadeIn = audio && isSameSong && !isPlaying
 
-    cancelFade(true)
+    if (shouldFadeIn) {
+      playWithFade()
+    } else {
+      cancelFade()
+      restoreUserVolume()
+    }
 
     setCurrentSong(song)
-    setIsPlaying(true)
+    if (!shouldFadeIn) {
+      setIsPlaying(true)
+    }
     setProgress(0)
     setCurrentTime(0)
     setDuration(0)
-
-    if (shouldFadeIn) {
-      const savedVolume = clampVolume(audio.volume)
-
-      manualAudioControlRef.current = 'play'
-      audio.volume = 0
-      audio.play()
-        .then(() => {
-          fadeVolume(audio, 0, savedVolume, FADE_DURATION)
-        })
-        .catch((err) => {
-          console.error('Audio play failed:', err)
-          audio.volume = savedVolume
-        })
-    }
 
     // Extract dominant color from album artwork
     if (song.cover) {
@@ -539,20 +589,7 @@ function App() {
   }
 
   const handlePause = () => {
-    const audio = audioRef.current
-
-    cancelFade(true)
-    setIsPlaying(false)
-
-    if (audio) {
-      const savedVolume = clampVolume(audio.volume)
-      manualAudioControlRef.current = 'pause'
-
-      fadeVolume(audio, audio.volume, 0, FADE_DURATION, () => {
-        audio.pause()
-        audio.volume = savedVolume
-      }, savedVolume)
-    }
+    pauseWithFade()
     
     // Update playback state
     if ('mediaSession' in navigator) {
@@ -561,7 +598,8 @@ function App() {
   }
 
   const handleNext = () => {
-    cancelFade(true)
+    cancelFade()
+    restoreUserVolume()
 
     // Play from queue if not empty
     if (queue.length > 0) {
@@ -580,7 +618,8 @@ function App() {
   }
 
   const handlePrevious = () => {
-    cancelFade(true)
+    cancelFade()
+    restoreUserVolume()
 
     const currentIndex = songsData.findIndex(s => s.id === currentSong?.id)
     const prevIndex = currentIndex === 0 ? songsData.length - 1 : currentIndex - 1
@@ -615,7 +654,8 @@ function App() {
   }
 
   const playFromQueue = (song) => {
-    cancelFade(true)
+    cancelFade()
+    restoreUserVolume()
 
     setCurrentSong(song)
     const updatedQueue = queue.filter(s => s.id !== song.id)
@@ -950,8 +990,10 @@ function App() {
           onClose={() => setShowFullscreenPlayer(false)}
           currentTheme={appliedTheme}
           currentTime={currentTime}
+          setCurrentTime={setCurrentTime}
           duration={duration}
           onSeek={handleSeek}
+          audioRef={audioRef}
           isLightMode={isLightMode}
           dominantColor={dominantColor}
           themeName={theme}

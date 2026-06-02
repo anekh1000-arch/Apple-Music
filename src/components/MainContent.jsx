@@ -1121,8 +1121,27 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
             height: 0;
           }
         }
+
+        @media (min-width: 768px) {
+          .desktop-page-transition {
+            animation: desktopPageEnter 180ms ease-out;
+          }
+        }
+
+        @keyframes desktopPageEnter {
+          from {
+            opacity: 0;
+            transform: translateY(6px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
       `}</style>
-      {renderContent()}
+      <div key={view} className="desktop-page-transition">
+        {renderContent()}
+      </div>
     </main>
   )
 }
