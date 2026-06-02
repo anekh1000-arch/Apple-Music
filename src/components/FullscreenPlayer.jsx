@@ -138,13 +138,7 @@ function FullscreenPlayer({ currentSong, isPlaying, progress, setProgress, onPla
       {/* Background with blur */}
       <div className="absolute inset-0 z-0">
         {(() => {
-          const currentSongIndex = songs?.findIndex((s) =>
-            s.id === currentSong?.id ||
-            s.title === currentSong?.title ||
-            s.name === currentSong?.name
-          ) ?? 0;
-          const safeIndex = currentSongIndex >= 0 ? currentSongIndex : 0;
-          const coverSrc = getCoverForSong(currentSong, safeIndex);
+          const coverSrc = getCoverForSong(currentSong);
           
           console.log("FULL PLAYER BACKGROUND COVER:", coverSrc, currentSong);
           
@@ -185,13 +179,7 @@ function FullscreenPlayer({ currentSong, isPlaying, progress, setProgress, onPla
         {/* Album Art */}
         <div className="mb-6">
           {(() => {
-            const currentSongIndex = songs?.findIndex((s) =>
-              s.id === currentSong?.id ||
-              s.title === currentSong?.title ||
-              s.name === currentSong?.name
-            ) ?? 0;
-            const safeIndex = currentSongIndex >= 0 ? currentSongIndex : 0;
-            const coverSrc = getCoverForSong(currentSong, safeIndex);
+            const coverSrc = getCoverForSong(currentSong);
             
             console.log("FULL PLAYER COVER:", coverSrc, currentSong);
             

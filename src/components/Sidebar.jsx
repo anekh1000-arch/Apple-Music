@@ -95,7 +95,7 @@ function Sidebar({ view, setView, playlist, removeFromPlaylist, currentTheme, is
                     </div>
                   ) : (
                     <img
-                      src={getCoverForSong(song, index)}
+                      src={getCoverForSong(song)}
                       alt={song.title}
                       className="w-8 h-8 rounded object-cover group-hover:scale-110 transition-transform duration-300"
                       onError={() => handleImageError(song.id)}

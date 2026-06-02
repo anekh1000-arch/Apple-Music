@@ -283,7 +283,7 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
                           </div>
                         ) : (
                           <img
-                            src={getCoverForSong(featuredSong, 0)}
+                            src={getCoverForSong(featuredSong)}
                             alt={featuredSong.title}
                             className="w-full h-full rounded-2xl object-cover shadow-xl transition-all duration-300 group-hover:scale-105"
                             onError={() => handleImageError(featuredSong.id)}
@@ -327,7 +327,7 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
                       </div>
                     ) : (
                       <img
-                        src={getCoverForSong(featuredSong, 0)}
+                        src={getCoverForSong(featuredSong)}
                         alt={featuredSong.title}
                         className="w-32 h-32 rounded-xl object-cover shadow-2xl transition-all duration-300 group-hover:scale-105"
                         onError={() => handleImageError(featuredSong.id)}
@@ -380,7 +380,7 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
                           </div>
                         ) : (
                           <img
-                            src={getCoverForSong(song, index)}
+                            src={getCoverForSong(song)}
                             alt={song.title}
                             className="w-full aspect-square object-cover rounded-2xl group-hover:scale-105 transition-transform duration-200"
                             onError={() => handleImageError(song.id)}
@@ -424,7 +424,7 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
                           </div>
                         ) : (
                           <img
-                            src={getCoverForSong(song, index)}
+                            src={getCoverForSong(song)}
                             alt={song.title}
                             className="w-full aspect-square object-cover rounded-2xl group-hover:scale-105 transition-transform duration-200"
                             onError={() => handleImageError(song.id)}
@@ -467,7 +467,7 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
                         </div>
                       ) : (
                         <img
-                          src={getCoverForSong(song, index)}
+                          src={getCoverForSong(song)}
                           alt={song.title}
                           className="w-full aspect-square object-cover rounded-2xl group-hover:scale-105 transition-transform duration-200"
                           onError={() => handleImageError(song.id)}
@@ -992,7 +992,7 @@ function SongList({ songs, onPlay, currentSong, addToPlaylist, playlist, addToQu
               </div>
             ) : (
               <img
-                src={getCoverForSong(song, index)}
+                src={getCoverForSong(song)}
                 alt={song.title}
                 loading="lazy"
                 className="w-12 h-12 rounded object-cover flex-shrink-0"
@@ -1105,7 +1105,7 @@ function SongList({ songs, onPlay, currentSong, addToPlaylist, playlist, addToQu
                     </div>
                   ) : (
                     <img
-                      src={getCoverForSong(song, index)}
+                      src={getCoverForSong(song)}
                       alt={song.title}
                       loading="lazy"
                       className="w-8 h-8 rounded object-cover group-hover:scale-103 group-hover:-translate-y-0.5 transition-all duration-200"
@@ -1210,7 +1210,7 @@ function QueueList({ songs, onPlay, removeFromQueue, imageErrors, handleImageErr
                     </div>
                   ) : (
                     <img
-                      src={getCoverForSong(song, index)}
+                      src={getCoverForSong(song)}
                       alt={song.title}
                       loading="lazy"
                       className="w-8 h-8 rounded object-cover group-hover:scale-103 group-hover:-translate-y-0.5 transition-all duration-200"

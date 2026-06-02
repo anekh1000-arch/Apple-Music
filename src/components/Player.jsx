@@ -140,7 +140,7 @@ function Player({ currentSong, isPlaying, progress, setProgress, onPlay, onPause
               </div>
             ) : (
               <img
-                src={getCoverForSong(currentSong, songs?.findIndex(s => s.id === currentSong.id) || 0)}
+                src={getCoverForSong(currentSong)}
                 alt={currentSong.title}
                 className="w-12 h-12 md:w-14 md:h-14 rounded-xl object-cover shadow-lg transition-all duration-300"
                 style={{ opacity: isTransitioning ? 0.5 : 1, transform: isTransitioning ? 'scale(0.95)' : 'scale(1)' }}

@@ -11,7 +11,29 @@ export const coverImages = [
   "/covers/cover-10.jpg",
 ];
 
-export function getCoverForSong(song, index = 0) {
-  const safeIndex = Number.isFinite(index) && index >= 0 ? index : 0;
-  return coverImages[safeIndex % coverImages.length];
+function hashString(str = "") {
+  let hash = 0;
+
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash << 5) - hash + str.charCodeAt(i);
+    hash |= 0;
+  }
+
+  return Math.abs(hash);
+}
+
+export function getCoverForSong(song) {
+  const stableKey =
+    song?.id ||
+    song?.fileName ||
+    song?.filename ||
+    song?.src ||
+    song?.url ||
+    song?.title ||
+    song?.name ||
+    "default-song";
+
+  const index = hashString(String(stableKey)) % coverImages.length;
+
+  return coverImages[index];
 }
