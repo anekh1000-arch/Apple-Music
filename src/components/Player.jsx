@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Play, Pause, SkipBack, SkipForward, Volume2, AlertCircle } from 'lucide-react'
-import { hapticMedium } from '../lib/haptics'
+import { hapticLight, hapticMedium } from '../lib/haptics'
 
 function Player({ currentSong, isPlaying, progress, setProgress, onPlay, onPause, onNext, onPrevious, onOpenFullscreen, currentTheme, audioRef, currentTime, duration, onSeek, onTimeUpdate, isLightMode, dominantColor, themeName, isMidnightBlackTheme, getMidnightBlackContrast }) {
   const [volume, setVolume] = useState(1)
@@ -173,7 +173,7 @@ function Player({ currentSong, isPlaying, progress, setProgress, onPlay, onPause
               onClick={(e) => {
                 e.stopPropagation()
                 isPlaying ? onPause() : onPlay(currentSong)
-                hapticMedium()
+                hapticLight()
               }}
               className="w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all duration-150 shadow-lg active:scale-95 flex-shrink-0"
               style={{

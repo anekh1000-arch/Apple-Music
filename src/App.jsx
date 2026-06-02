@@ -114,6 +114,10 @@ function App() {
     const saved = localStorage.getItem('appearance')
     return saved === 'light' || false
   })
+  const [hapticFeedbackEnabled, setHapticFeedbackEnabled] = useState(() => {
+    const saved = localStorage.getItem('hapticFeedbackEnabled')
+    return saved !== 'false' // Default to true
+  })
   const [listeningStats, setListeningStats] = useState(() => {
     const saved = localStorage.getItem('listeningStats')
     return saved ? JSON.parse(saved) : {
@@ -814,6 +818,8 @@ function App() {
           isAnimating={isAnimating}
           isLightMode={isLightMode}
           onAppearanceChange={handleAppearanceChange}
+          hapticFeedbackEnabled={hapticFeedbackEnabled}
+          setHapticFeedbackEnabled={setHapticFeedbackEnabled}
         />
       </div>
       

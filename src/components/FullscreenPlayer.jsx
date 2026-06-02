@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Play, Pause, SkipBack, SkipForward, AlertCircle, ChevronDown } from 'lucide-react'
-import { hapticMedium, hapticLight } from '../lib/haptics'
+import { hapticLight, hapticMedium, hapticSelection } from '../lib/haptics'
 
 function FullscreenPlayer({ currentSong, isPlaying, progress, setProgress, onPlay, onPause, onNext, onPrevious, onClose, currentTheme, currentTime, duration, onSeek, isLightMode, dominantColor, themeName, isMidnightBlackTheme, getMidnightBlackContrast }) {
   const [imageError, setImageError] = useState(false)
@@ -34,7 +34,7 @@ function FullscreenPlayer({ currentSong, isPlaying, progress, setProgress, onPla
   }
 
   const handleClose = () => {
-    hapticLight()
+    hapticSelection()
     setIsClosing(true)
     setTimeout(() => {
       onClose()
@@ -236,7 +236,7 @@ function FullscreenPlayer({ currentSong, isPlaying, progress, setProgress, onPla
           <button
             onClick={() => {
               isPlaying ? onPause() : onPlay(currentSong)
-              hapticMedium()
+              hapticLight()
             }}
             className="w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center transition-all duration-150 shadow-2xl active:scale-95"
             style={{

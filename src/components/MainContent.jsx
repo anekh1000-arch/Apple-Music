@@ -3,7 +3,7 @@ import { Play, Plus, Clock, ListPlus } from 'lucide-react'
 import { hapticLight, hapticMedium, hapticSuccess, hapticSelection } from '../lib/haptics'
 import { getDailyPick, getDailyRecommendations } from '../lib/dailyPick'
 
-function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, addToPlaylist, playlist, queue, addToQueue, removeFromQueue, playFromQueue, recentlyPlayed, songs, loading, error, onOpenFullscreen, listeningStats, favoriteArtist, favoriteAlbum, theme, currentTheme, onThemeChange, themes, slideDirection, isAnimating, isLightMode, onAppearanceChange }) {
+function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, addToPlaylist, playlist, queue, addToQueue, removeFromQueue, playFromQueue, recentlyPlayed, songs, loading, error, onOpenFullscreen, listeningStats, favoriteArtist, favoriteAlbum, theme, currentTheme, onThemeChange, themes, slideDirection, isAnimating, isLightMode, onAppearanceChange, hapticFeedbackEnabled, setHapticFeedbackEnabled }) {
   const filteredSongs = songs.filter(song =>
     song.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     song.artist.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -809,6 +809,33 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
                     style={{
                       backgroundColor: '#FFFFFF',
                       transform: rememberLastPlayed ? 'translateX(20px)' : 'translateX(2px)'
+                    }}
+                  />
+                </button>
+              </div>
+
+              {/* Haptic Feedback Toggle */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium" style={{ color: isLightMode ? '#111111' : '#FFFFFF' }}>Haptic Feedback</p>
+                  <p className="text-xs" style={{ color: isLightMode ? '#6E6E73' : '#A1A1AA' }}>Vibration on supported devices</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setHapticFeedbackEnabled(!hapticFeedbackEnabled)
+                    localStorage.setItem('hapticFeedbackEnabled', (!hapticFeedbackEnabled).toString())
+                    hapticSelection()
+                  }}
+                  className="w-12 h-7 rounded-full transition-all duration-200"
+                  style={{
+                    backgroundColor: hapticFeedbackEnabled ? currentTheme.accent : (isLightMode ? '#E5E7EB' : '#3A3A3C')
+                  }}
+                >
+                  <div
+                    className="w-5 h-5 rounded-full transition-all duration-200"
+                    style={{
+                      backgroundColor: '#FFFFFF',
+                      transform: hapticFeedbackEnabled ? 'translateX(20px)' : 'translateX(2px)'
                     }}
                   />
                 </button>
