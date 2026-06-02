@@ -167,7 +167,15 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
     if (typeof value === 'number' && Number.isFinite(value) && value > 0) return value
     if (typeof value !== 'string') return 0
 
-    const parts = value.split(':').map(part => Number.parseInt(part, 10))
+    const trimmedValue = value.trim()
+    if (!trimmedValue) return 0
+
+    const numericValue = Number(trimmedValue)
+    if (!trimmedValue.includes(':') && Number.isFinite(numericValue) && numericValue > 0) {
+      return numericValue
+    }
+
+    const parts = trimmedValue.split(':').map(part => Number.parseInt(part, 10))
     if (parts.some(part => Number.isNaN(part))) return 0
 
     if (parts.length === 2) {
@@ -197,24 +205,31 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
     const totalSongs = validSongs.length
     const totalFavorites = favoriteSongs?.length || 0
     const totalDurationSeconds = validSongs.reduce((total, song) => {
-      return total + parseDurationToSeconds(song.duration)
+      return total + parseDurationToSeconds(
+        song.duration ||
+        song.durationSeconds ||
+        song.length ||
+        song.audioDuration
+      )
     }, 0)
 
     const artists = new Set(
       validSongs
         .map(song => song.artist)
         .filter(artist => artist && artist !== 'Unknown Artist')
+        .map(artist => artist.trim().toLowerCase())
     )
 
     const albums = new Set(
       validSongs
         .map(song => song.album)
         .filter(album => album && album !== 'Unknown Album')
+        .map(album => album.trim().toLowerCase())
     )
 
     const totalArtists = artists.size
-    const totalAlbums = albums.size
-    const maxStat = Math.max(totalSongs, totalArtists, totalAlbums, totalFavorites, 1)
+    const totalAlbums = albums.size || null
+    const maxStat = Math.max(totalSongs, totalArtists, totalAlbums || 0, totalFavorites, 1)
 
     return {
       totalSongs,
@@ -223,7 +238,7 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
       totalFavorites,
       duration: formatDurationTotal(totalDurationSeconds),
       artistsPercent: Math.min((totalArtists / maxStat) * 100, 100),
-      albumsPercent: Math.min((totalAlbums / maxStat) * 100, 100),
+      albumsPercent: totalAlbums ? Math.min((totalAlbums / maxStat) * 100, 100) : 0,
       favoritesPercent: totalSongs ? Math.min((totalFavorites / totalSongs) * 100, 100) : 0,
       durationPercent: totalDurationSeconds ? Math.min((totalDurationSeconds / (10 * 3600)) * 100, 100) : 0,
       mixBars: [
@@ -1201,7 +1216,7 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
 
   return (
     <main 
-      className={`flex-1 w-full min-w-0 overflow-y-auto p-6 pb-28 md:pb-28 ${isLightMode ? '' : 'dark'}`}
+      className={`flex-1 w-full min-w-0 overflow-y-auto p-6 pb-28 md:pb-28 ${view === 'settings' ? 'settings-main' : ''} ${isLightMode ? '' : 'dark'}`}
       style={{ 
         backgroundColor: currentTheme.bg,
         paddingBottom: view === 'settings' ? 'calc(140px + env(safe-area-inset-bottom))' : 'calc(7rem + env(safe-area-inset-bottom))',
@@ -1211,7 +1226,7 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
       }}
     >
       <style>{`
-        @media (max-width: 768px) {
+        @media (max-width: 767px) {
           main::-webkit-scrollbar {
             display: none;
             -webkit-appearance: none;
@@ -1219,8 +1234,17 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
             height: 0;
           }
 
+          .settings-main .desktop-page-transition {
+            overflow: visible;
+          }
+
+          .settings-main {
+            padding: 14px 14px calc(145px + env(safe-area-inset-bottom)) !important;
+          }
+
           .settings-page {
-            padding-bottom: calc(140px + env(safe-area-inset-bottom));
+            padding-bottom: calc(145px + env(safe-area-inset-bottom));
+            overflow: visible;
           }
 
           .settings-page-title {
@@ -1228,24 +1252,30 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
           }
 
           .settings-card {
-            padding: 20px !important;
-            border-radius: 24px !important;
-            margin-bottom: 22px !important;
+            padding: 12px !important;
+            border-radius: 16px !important;
+            margin-bottom: 14px !important;
+            overflow: visible !important;
+            height: auto !important;
+            max-height: none !important;
           }
 
           .settings-section-title {
-            font-size: 20px !important;
-            margin-bottom: 14px !important;
+            font-size: 17px !important;
+            font-weight: 700 !important;
+            line-height: 1.15 !important;
+            margin-bottom: 10px !important;
           }
 
           .settings-option-grid {
-            gap: 12px !important;
+            gap: 7px !important;
           }
 
           .settings-option-row {
-            min-height: 72px;
-            padding: 14px 16px !important;
-            border-radius: 18px !important;
+            min-height: 48px !important;
+            padding: 8px 10px !important;
+            border-radius: 13px !important;
+            gap: 9px !important;
           }
 
           .settings-avatar {
@@ -1258,18 +1288,56 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
           }
 
           .settings-swatch {
-            width: 46px !important;
-            height: 46px !important;
+            width: 30px !important;
+            height: 30px !important;
+            min-width: 30px !important;
           }
 
           .settings-option-title {
-            font-size: 20px !important;
-            line-height: 1.1;
+            font-size: 15px !important;
+            font-weight: 650 !important;
+            line-height: 1.05 !important;
           }
 
           .settings-option-subtitle {
-            font-size: 14px !important;
-            line-height: 1.25;
+            font-size: 11.5px !important;
+            line-height: 1.1 !important;
+            opacity: 0.62;
+          }
+
+          .collection-card {
+            padding: 12px !important;
+            overflow: visible !important;
+            height: auto !important;
+            max-height: none !important;
+          }
+
+          .collection-card .settings-section-title {
+            margin-bottom: 8px !important;
+          }
+
+          .collection-summary {
+            margin-bottom: 12px !important;
+            overflow: visible;
+          }
+
+          .collection-total {
+            font-size: 34px !important;
+            line-height: 1 !important;
+          }
+
+          .collection-caption,
+          .collection-stat-subtitle {
+            font-size: 11.5px !important;
+          }
+
+          .collection-stat-list {
+            gap: 10px !important;
+          }
+
+          .collection-mix-card {
+            margin-top: 12px !important;
+            padding: 12px !important;
           }
         }
 
