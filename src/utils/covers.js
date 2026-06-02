@@ -22,7 +22,7 @@ function hashString(str = "") {
   return Math.abs(hash);
 }
 
-export function getCoverForSong(song) {
+export function getCoverForSong(song, offset = 0) {
   const stableKey =
     song?.id ||
     song?.fileName ||
@@ -33,7 +33,7 @@ export function getCoverForSong(song) {
     song?.name ||
     "default-song";
 
-  const index = hashString(String(stableKey)) % coverImages.length;
+  const index = (hashString(String(stableKey)) + offset) % coverImages.length;
 
   return coverImages[index];
 }

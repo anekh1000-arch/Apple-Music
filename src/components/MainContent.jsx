@@ -363,29 +363,41 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
               <div className="mb-8">
                 <h2 className="text-lg font-semibold mb-4" style={{ color: isLightMode ? '#111111' : '#FFFFFF' }}>Daily Mix</h2>
                 <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 pr-4 md:mx-0 md:px-0 md:pr-0">
-                  {recommendedSongs.map((song, index) => (
-                    <div
-                      key={song.id}
-                      onClick={() => handleAlbumClick(song)}
-                      className="flex-shrink-0 w-36 md:w-40 group cursor-pointer"
-                    >
-                      <div className="relative mb-3">
-                        {imageErrors[song.id] ? (
-                          <div className="w-full aspect-square rounded-2xl flex items-center justify-center" style={{ backgroundColor: isLightMode ? '#E5E7EB' : '#121212' }}>
-                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" style={{ color: isLightMode ? '#6E6E73' : '#71717A' }}>
-                              <path d="M9 18V5l12-2v13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                              <circle cx="6" cy="18" r="3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                              <circle cx="18" cy="16" r="3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                          </div>
-                        ) : (
-                          <img
-                            src={getCoverForSong(song)}
-                            alt={song.title}
-                            className="w-full aspect-square object-cover rounded-2xl group-hover:scale-105 transition-transform duration-200"
-                            onError={() => handleImageError(song.id)}
-                          />
-                        )}
+                  {(() => {
+                    // Calculate Featured Album cover
+                    const featuredCover = featuredSong ? getCoverForSong(featuredSong) : null;
+                    // Calculate offset to avoid duplicate with Featured Album
+                    let dailyMixOffset = 0;
+                    if (featuredCover && recommendedSongs.length > 0) {
+                      const firstDailyMixCover = getCoverForSong(recommendedSongs[0]);
+                      if (firstDailyMixCover === featuredCover) {
+                        dailyMixOffset = 1;
+                      }
+                    }
+                    
+                    return recommendedSongs.map((song, index) => (
+                      <div
+                        key={song.id}
+                        onClick={() => handleAlbumClick(song)}
+                        className="flex-shrink-0 w-36 md:w-40 group cursor-pointer"
+                      >
+                        <div className="relative mb-3">
+                          {imageErrors[song.id] ? (
+                            <div className="w-full aspect-square rounded-2xl flex items-center justify-center" style={{ backgroundColor: isLightMode ? '#E5E7EB' : '#121212' }}>
+                              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" style={{ color: isLightMode ? '#6E6E73' : '#71717A' }}>
+                                <path d="M9 18V5l12-2v13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                <circle cx="6" cy="18" r="3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                <circle cx="18" cy="16" r="3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                            </div>
+                          ) : (
+                            <img
+                              src={getCoverForSong(song, dailyMixOffset)}
+                              alt={song.title}
+                              className="w-full aspect-square object-cover rounded-2xl group-hover:scale-105 transition-transform duration-200"
+                              onError={() => handleImageError(song.id)}
+                            />
+                          )}
                         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-2xl flex items-center justify-center backdrop-blur-sm" style={{ backgroundColor: 'rgba(0, 0, 0, 0.4)' }}>
                           <div className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg backdrop-blur-md transition-all duration-200 group-hover:bg-opacity-22" style={{ backgroundColor: 'rgba(255, 255, 255, 0.14)', border: '1px solid rgba(255, 255, 255, 0.25)' }}>
                             <Play size={20} fill="white" className="text-white ml-0.5" />
@@ -397,7 +409,7 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
                         <p className="text-xs truncate" style={{ color: isLightMode ? '#6E6E73' : '#A1A1AA' }}>{song.artist}</p>
                       )}
                     </div>
-                  ))}
+                  ))})()}
                 </div>
               </div>
             )}
