@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { Play, Pause, SkipBack, SkipForward, AlertCircle, ChevronDown } from 'lucide-react'
 import { hapticLight, hapticMedium, hapticSelection } from '../lib/haptics'
+import { getCoverForSong } from '../utils/covers'
 
-function FullscreenPlayer({ currentSong, isPlaying, progress, setProgress, onPlay, onPause, onNext, onPrevious, onClose, currentTheme, currentTime, duration, onSeek, isLightMode, dominantColor, themeName, isMidnightBlackTheme, getMidnightBlackContrast }) {
+function FullscreenPlayer({ currentSong, isPlaying, progress, setProgress, onPlay, onPause, onNext, onPrevious, onClose, currentTheme, currentTime, duration, onSeek, isLightMode, dominantColor, themeName, isMidnightBlackTheme, getMidnightBlackContrast, songs }) {
   const [imageError, setImageError] = useState(false)
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [isClosing, setIsClosing] = useState(false)
@@ -140,7 +141,7 @@ function FullscreenPlayer({ currentSong, isPlaying, progress, setProgress, onPla
           <div className="w-full h-full" style={{ backgroundColor: currentTheme.surfaceLight }} />
         ) : (
           <img
-            src={currentSong.cover}
+            src={getCoverForSong(currentSong, songs?.findIndex(s => s.id === currentSong.id) || 0)}
             alt=""
             className="w-full h-full object-cover opacity-40 blur-3xl scale-125"
             onError={() => setImageError(true)}
@@ -177,7 +178,7 @@ function FullscreenPlayer({ currentSong, isPlaying, progress, setProgress, onPla
             </div>
           ) : (
             <img
-              src={currentSong.cover}
+              src={getCoverForSong(currentSong, songs?.findIndex(s => s.id === currentSong.id) || 0)}
               alt={currentSong.title}
               className="w-64 h-64 md:w-72 md:h-72 rounded-3xl object-cover shadow-2xl transition-all duration-300 hover:scale-105"
               style={{ boxShadow: isLightMode ? '0 20px 40px -12px rgba(0, 0, 0, 0.2)' : '0 20px 40px -12px rgba(0, 0, 0, 0.5)', opacity: isTransitioning ? 0.5 : 1, transform: isTransitioning ? 'scale(0.95)' : 'scale(1)' }}

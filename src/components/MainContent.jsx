@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { Play, Plus, Clock, ListPlus, Heart } from 'lucide-react'
 import { hapticLight, hapticMedium, hapticSuccess, hapticSelection } from '../lib/haptics'
 import { getDailyPick, getDailyRecommendations } from '../lib/dailyPick'
+import { getCoverForSong } from '../utils/covers'
 
 function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, addToPlaylist, playlist, queue, addToQueue, removeFromQueue, playFromQueue, recentlyPlayed, songs, loading, error, onOpenFullscreen, listeningStats, favoriteArtist, favoriteAlbum, theme, currentTheme, onThemeChange, themes, slideDirection, isAnimating, isLightMode, onAppearanceChange, hapticFeedbackEnabled, setHapticFeedbackEnabled, favoriteSongs, toggleFavorite, sleepTimer, setSleepTimer }) {
   const filteredSongs = songs.filter(song =>
@@ -282,7 +283,7 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
                           </div>
                         ) : (
                           <img
-                            src={featuredSong.cover}
+                            src={getCoverForSong(featuredSong, 0)}
                             alt={featuredSong.title}
                             className="w-full h-full rounded-2xl object-cover shadow-xl transition-all duration-300 group-hover:scale-105"
                             onError={() => handleImageError(featuredSong.id)}
@@ -326,7 +327,7 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
                       </div>
                     ) : (
                       <img
-                        src={featuredSong.cover}
+                        src={getCoverForSong(featuredSong, 0)}
                         alt={featuredSong.title}
                         className="w-32 h-32 rounded-xl object-cover shadow-2xl transition-all duration-300 group-hover:scale-105"
                         onError={() => handleImageError(featuredSong.id)}
@@ -362,7 +363,7 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
               <div className="mb-8">
                 <h2 className="text-lg font-semibold mb-4" style={{ color: isLightMode ? '#111111' : '#FFFFFF' }}>Daily Mix</h2>
                 <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
-                  {recommendedSongs.map((song) => (
+                  {recommendedSongs.map((song, index) => (
                     <div
                       key={song.id}
                       onClick={() => handleAlbumClick(song)}
@@ -379,7 +380,7 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
                           </div>
                         ) : (
                           <img
-                            src={song.cover}
+                            src={getCoverForSong(song, index)}
                             alt={song.title}
                             className="w-full aspect-square object-cover rounded-2xl group-hover:scale-105 transition-transform duration-200"
                             onError={() => handleImageError(song.id)}
@@ -406,7 +407,7 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
               <div className="mb-8">
                 <h2 className="text-lg font-semibold mb-4" style={{ color: isLightMode ? '#111111' : '#FFFFFF' }}>Recently Played</h2>
                 <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
-                  {recentlyPlayed.map((song) => (
+                  {recentlyPlayed.map((song, index) => (
                     <div
                       key={song.id}
                       onClick={() => handleAlbumClick(song)}
@@ -423,7 +424,7 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
                           </div>
                         ) : (
                           <img
-                            src={song.cover}
+                            src={getCoverForSong(song, index)}
                             alt={song.title}
                             className="w-full aspect-square object-cover rounded-2xl group-hover:scale-105 transition-transform duration-200"
                             onError={() => handleImageError(song.id)}
@@ -449,7 +450,7 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
             <div className="mb-8">
               <h2 className="text-lg font-semibold mb-4" style={{ color: isLightMode ? '#111111' : '#FFFFFF' }}>Recently Added</h2>
               <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
-                {songs.map((song) => (
+                {songs.map((song, index) => (
                   <div
                     key={song.id}
                     onClick={() => handleAlbumClick(song)}
@@ -466,7 +467,7 @@ function MainContent({ view, searchQuery, setSearchQuery, onPlay, currentSong, a
                         </div>
                       ) : (
                         <img
-                          src={song.cover}
+                          src={getCoverForSong(song, index)}
                           alt={song.title}
                           className="w-full aspect-square object-cover rounded-2xl group-hover:scale-105 transition-transform duration-200"
                           onError={() => handleImageError(song.id)}
@@ -991,7 +992,7 @@ function SongList({ songs, onPlay, currentSong, addToPlaylist, playlist, addToQu
               </div>
             ) : (
               <img
-                src={song.cover}
+                src={getCoverForSong(song, index)}
                 alt={song.title}
                 loading="lazy"
                 className="w-12 h-12 rounded object-cover flex-shrink-0"
@@ -1104,7 +1105,7 @@ function SongList({ songs, onPlay, currentSong, addToPlaylist, playlist, addToQu
                     </div>
                   ) : (
                     <img
-                      src={song.cover}
+                      src={getCoverForSong(song, index)}
                       alt={song.title}
                       loading="lazy"
                       className="w-8 h-8 rounded object-cover group-hover:scale-103 group-hover:-translate-y-0.5 transition-all duration-200"
@@ -1209,7 +1210,7 @@ function QueueList({ songs, onPlay, removeFromQueue, imageErrors, handleImageErr
                     </div>
                   ) : (
                     <img
-                      src={song.cover}
+                      src={getCoverForSong(song, index)}
                       alt={song.title}
                       loading="lazy"
                       className="w-8 h-8 rounded object-cover group-hover:scale-103 group-hover:-translate-y-0.5 transition-all duration-200"

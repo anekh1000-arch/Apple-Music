@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Play, Pause, SkipBack, SkipForward, Volume2, AlertCircle } from 'lucide-react'
 import { hapticLight, hapticMedium } from '../lib/haptics'
+import { getCoverForSong } from '../utils/covers'
 
-function Player({ currentSong, isPlaying, progress, setProgress, onPlay, onPause, onNext, onPrevious, onOpenFullscreen, currentTheme, audioRef, currentTime, duration, onSeek, onTimeUpdate, isLightMode, dominantColor, themeName, isMidnightBlackTheme, getMidnightBlackContrast }) {
+function Player({ currentSong, isPlaying, progress, setProgress, onPlay, onPause, onNext, onPrevious, onOpenFullscreen, currentTheme, audioRef, currentTime, duration, onSeek, onTimeUpdate, isLightMode, dominantColor, themeName, isMidnightBlackTheme, getMidnightBlackContrast, songs }) {
   const [volume, setVolume] = useState(1)
   const [isMuted, setIsMuted] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -139,7 +140,7 @@ function Player({ currentSong, isPlaying, progress, setProgress, onPlay, onPause
               </div>
             ) : (
               <img
-                src={currentSong.cover}
+                src={getCoverForSong(currentSong, songs?.findIndex(s => s.id === currentSong.id) || 0)}
                 alt={currentSong.title}
                 className="w-12 h-12 md:w-14 md:h-14 rounded-xl object-cover shadow-lg transition-all duration-300"
                 style={{ opacity: isTransitioning ? 0.5 : 1, transform: isTransitioning ? 'scale(0.95)' : 'scale(1)' }}

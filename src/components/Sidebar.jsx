@@ -1,6 +1,7 @@
 import { Home, Search, Music, Heart, Settings, ListMusic } from 'lucide-react'
 import { useState } from 'react'
 import { hapticSelection } from '../lib/haptics'
+import { getCoverForSong } from '../utils/covers'
 
 function Sidebar({ view, setView, playlist, removeFromPlaylist, currentTheme, isLightMode, themeName, isMidnightBlackTheme, getMidnightBlackContrast }) {
   const [imageErrors, setImageErrors] = useState({})
@@ -86,7 +87,7 @@ function Sidebar({ view, setView, playlist, removeFromPlaylist, currentTheme, is
               Playlist
             </h3>
             <ul className="space-y-1 max-h-48 overflow-y-auto scrollbar-hide">
-              {playlist.map((song) => (
+              {playlist.map((song, index) => (
                 <li key={song.id} className="flex items-center gap-3 rounded-lg p-2 transition-colors cursor-pointer group" style={{ backgroundColor: 'transparent' }}>
                   {imageErrors[song.id] ? (
                     <div className="w-8 h-8 rounded flex items-center justify-center" style={{ backgroundColor: currentTheme.surfaceLight }}>
@@ -94,7 +95,7 @@ function Sidebar({ view, setView, playlist, removeFromPlaylist, currentTheme, is
                     </div>
                   ) : (
                     <img
-                      src={song.cover}
+                      src={getCoverForSong(song, index)}
                       alt={song.title}
                       className="w-8 h-8 rounded object-cover group-hover:scale-110 transition-transform duration-300"
                       onError={() => handleImageError(song.id)}
