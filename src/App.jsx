@@ -871,6 +871,8 @@ function App() {
           isMidnightBlackTheme={isMidnightBlackTheme}
           getMidnightBlackContrast={getMidnightBlackContrast}
           songs={songs}
+          favoriteSongs={favoriteSongs}
+          toggleFavorite={toggleFavorite}
         />
       )}
     </div>

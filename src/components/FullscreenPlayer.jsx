@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Play, Pause, SkipBack, SkipForward, AlertCircle, ChevronDown } from 'lucide-react'
-import { hapticLight, hapticMedium, hapticSelection } from '../lib/haptics'
+import { Play, Pause, SkipBack, SkipForward, AlertCircle, ChevronDown, Heart } from 'lucide-react'
+import { hapticLight, hapticMedium, hapticSelection, hapticSuccess } from '../lib/haptics'
 import { getCoverForSong } from '../utils/covers'
 
-function FullscreenPlayer({ currentSong, isPlaying, progress, setProgress, onPlay, onPause, onNext, onPrevious, onClose, currentTheme, currentTime, duration, onSeek, isLightMode, dominantColor, themeName, isMidnightBlackTheme, getMidnightBlackContrast, songs }) {
+function FullscreenPlayer({ currentSong, isPlaying, progress, setProgress, onPlay, onPause, onNext, onPrevious, onClose, currentTheme, currentTime, duration, onSeek, isLightMode, dominantColor, themeName, isMidnightBlackTheme, getMidnightBlackContrast, songs, favoriteSongs, toggleFavorite }) {
   const [imageError, setImageError] = useState(false)
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [isClosing, setIsClosing] = useState(false)
@@ -211,7 +211,36 @@ function FullscreenPlayer({ currentSong, isPlaying, progress, setProgress, onPla
 
         {/* Song Info */}
         <div className="text-center mb-3">
-          <h1 className="text-xl md:text-2xl font-bold mb-1 leading-tight transition-all duration-300" style={{ color: currentTheme.text, opacity: isTransitioning ? 0.5 : 1, transform: isTransitioning ? 'translateY(-10px)' : 'translateY(0)' }}>{currentSong.title}</h1>
+          <div className="flex items-center justify-center gap-4 mb-2">
+            <h1 className="text-xl md:text-2xl font-bold leading-tight transition-all duration-300" style={{ color: currentTheme.text, opacity: isTransitioning ? 0.5 : 1, transform: isTransitioning ? 'translateY(-10px)' : 'translateY(0)' }}>{currentSong.title}</h1>
+            <button
+              onClick={() => {
+                toggleFavorite(currentSong)
+                hapticSuccess()
+              }}
+              className="flex-shrink-0 transition-all duration-200 active:scale-95"
+              style={{
+                width: '44px',
+                height: '44px',
+                borderRadius: '999px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: isLightMode ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.08)',
+                border: isLightMode ? '1px solid rgba(0, 0, 0, 0.08)' : '1px solid rgba(255, 255, 255, 0.12)',
+                color: favoriteSongs?.includes(currentSong?.id || currentSong?.title)
+                  ? (isLightMode ? '#ff2d55' : '#ff4d6d')
+                  : (isLightMode ? 'rgba(0, 0, 0, 0.65)' : 'rgba(255, 255, 255, 0.72)'),
+                backdropFilter: 'blur(12px)'
+              }}
+            >
+              <Heart 
+                size={20} 
+                fill={favoriteSongs?.includes(currentSong?.id || currentSong?.title) ? 'currentColor' : 'none'}
+                strokeWidth={favoriteSongs?.includes(currentSong?.id || currentSong?.title) ? 0 : 2}
+              />
+            </button>
+          </div>
           {currentSong.artist && currentSong.artist !== 'Unknown Artist' && (
             <p className="text-sm md:text-base mb-1 transition-all duration-300" style={{ color: currentTheme.textMuted, opacity: isTransitioning ? 0.5 : 1, transform: isTransitioning ? 'translateY(-10px)' : 'translateY(0)' }}>{currentSong.artist}</p>
           )}
