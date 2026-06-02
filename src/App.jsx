@@ -7,6 +7,7 @@ import { songs } from './data/songs'
 import { supabase, isSupabaseConfigured } from './lib/supabase'
 import { extractDominantColor } from './lib/extractColor'
 import { hapticLight } from './lib/haptics'
+import { saveToStorage, loadFromStorage, STORAGE_KEYS } from './utils/storage'
 
 // Theme definitions
 const themes = {
@@ -95,8 +96,7 @@ function App() {
   const [isAnimating, setIsAnimating] = useState(false)
   const [dominantColor, setDominantColor] = useState('#000000')
   const [favoriteSongs, setFavoriteSongs] = useState(() => {
-    const saved = localStorage.getItem('favoriteSongs')
-    return saved ? JSON.parse(saved) : []
+    return loadFromStorage(STORAGE_KEYS.favorites, [])
   })
   const [sleepTimer, setSleepTimer] = useState('off')
 
@@ -156,16 +156,16 @@ function App() {
   
   const tabOrder = ['home', 'search', 'library', 'favorites', 'settings']
   const [theme, setTheme] = useState(() => {
-    const saved = localStorage.getItem('theme')
+    const saved = loadFromStorage(STORAGE_KEYS.theme, 'midnight-black')
     // Migrate removed themes
     if (saved === 'violet-eclipse' || saved === 'sunset-gold') {
-      localStorage.setItem('theme', 'midnight-black')
+      saveToStorage(STORAGE_KEYS.theme, 'midnight-black')
       return 'midnight-black'
     }
-    return saved || 'midnight-black'
+    return saved
   })
   const [isLightMode, setIsLightMode] = useState(() => {
-    const saved = localStorage.getItem('appearance')
+    const saved = loadFromStorage(STORAGE_KEYS.theme, 'midnight-black')
     return saved === 'light' || false
   })
   const [hapticFeedbackEnabled, setHapticFeedbackEnabled] = useState(() => {
@@ -548,7 +548,7 @@ function App() {
     }
 
     setFavoriteSongs(updatedFavorites)
-    localStorage.setItem('favoriteSongs', JSON.stringify(updatedFavorites))
+    saveToStorage(STORAGE_KEYS.favorites, updatedFavorites)
   }
 
   // Save playback session to localStorage
@@ -562,7 +562,8 @@ function App() {
         queue: queue,
         timestamp: Date.now()
       }
-      localStorage.setItem('playbackSession', JSON.stringify(session))
+      saveToStorage(STORAGE_KEYS.currentSong, currentSong)
+      saveToStorage(STORAGE_KEYS.playbackTime, currentTime)
     }
   }, [currentSong, currentTime, duration, isPlaying, queue])
 
@@ -603,47 +604,42 @@ function App() {
   // Restore playback session on app load
   useEffect(() => {
     if (songsData.length > 0) {
-      const savedSession = localStorage.getItem('playbackSession')
-      if (savedSession) {
-        try {
-          const session = JSON.parse(savedSession)
+      const savedSong = loadFromStorage(STORAGE_KEYS.currentSong, null)
+      const savedPlaybackTime = loadFromStorage(STORAGE_KEYS.playbackTime, 0)
+      
+      if (savedSong) {
+        // Check if the saved song still exists
+        const songExists = songsData.find(s => s.id === savedSong.id)
+        if (songExists) {
+          // Restore the song
+          setCurrentSong(songExists)
           
-          // Check if the saved song still exists
-          const savedSong = songsData.find(s => s.id === session.songId)
-          if (savedSong) {
-            // Restore the song
-            setCurrentSong(savedSong)
-            
-            // Restore the playback position
-            setCurrentTime(session.currentTime)
-            setDuration(session.duration)
-            setProgress((session.currentTime / session.duration) * 100)
-            
-            // Restore queue
-            if (session.queue && session.queue.length > 0) {
-              const validQueue = session.queue.filter(q => songsData.find(s => s.id === q.id))
-              setQueue(validQueue)
-            }
-            
-            // Do NOT autoplay - just restore the state
-            setIsPlaying(false)
-            
-            // If playback time is near the end (within 5 seconds), reset to 0
-            if (session.duration - session.currentTime < 5) {
-              setCurrentTime(0)
-              setProgress(0)
-            }
-          } else {
-            // Song no longer exists, clear the session
-            localStorage.removeItem('playbackSession')
+          // Restore the playback position
+          setCurrentTime(savedPlaybackTime)
+          setDuration(songExists.duration || 0)
+          setProgress((savedPlaybackTime / (songExists.duration || 1)) * 100)
+          
+          // Do NOT autoplay - just restore the state
+          setIsPlaying(false)
+          
+          // If playback time is near the end (within 5 seconds), reset to 0
+          if (songExists.duration && songExists.duration - savedPlaybackTime < 5) {
+            setCurrentTime(0)
+            setProgress(0)
           }
-        } catch (error) {
-          console.error('Error restoring playback session:', error)
-          localStorage.removeItem('playbackSession')
+        } else {
+          // Song no longer exists, clear the session
+          saveToStorage(STORAGE_KEYS.currentSong, null)
+          saveToStorage(STORAGE_KEYS.playbackTime, 0)
         }
       }
     }
   }, [songsData])
+
+  // Save theme changes to localStorage
+  useEffect(() => {
+    saveToStorage(STORAGE_KEYS.theme, isLightMode ? 'light' : theme)
+  }, [theme, isLightMode])
 
   // Calculate favorite artist and album
   const favoriteArtist = Object.entries(listeningStats.artistPlays).sort((a, b) => b[1] - a[1])[0]?.[0] || null

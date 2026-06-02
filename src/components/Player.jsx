@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react'
 import { Play, Pause, SkipBack, SkipForward, Volume2, AlertCircle } from 'lucide-react'
 import { hapticLight, hapticMedium } from '../lib/haptics'
 import { getCoverForSong } from '../utils/covers'
+import { loadFromStorage, saveToStorage, STORAGE_KEYS } from '../utils/storage'
 
 function Player({ currentSong, isPlaying, progress, setProgress, onPlay, onPause, onNext, onPrevious, onOpenFullscreen, currentTheme, audioRef, currentTime, duration, onSeek, onTimeUpdate, isLightMode, dominantColor, themeName, isMidnightBlackTheme, getMidnightBlackContrast, songs }) {
-  const [volume, setVolume] = useState(1)
+  const [volume, setVolume] = useState(() => loadFromStorage(STORAGE_KEYS.volume, 1))
   const [isMuted, setIsMuted] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [audioError, setAudioError] = useState(null)
@@ -15,6 +16,11 @@ function Player({ currentSong, isPlaying, progress, setProgress, onPlay, onPause
       audioRef.current.volume = isMuted ? 0 : volume
     }
   }, [volume, isMuted])
+
+  // Save volume changes to localStorage
+  useEffect(() => {
+    saveToStorage(STORAGE_KEYS.volume, volume)
+  }, [volume])
 
   // Reset error and loading state when song changes
   useEffect(() => {
